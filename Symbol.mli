@@ -51,7 +51,7 @@ and entry = {
   entry_id    : Identifier.id;
   entry_scope : scope;
   entry_info  : entry_info;
-  entry_llvalue : Llvm.llvalue option
+  frame_place : int;
 }
 
 type lookup_type = LOOKUP_CURRENT_SCOPE | LOOKUP_ALL_SCOPES
@@ -63,10 +63,10 @@ val tempNumber : int ref                  (* Αρίθμηση των temporaries  *)
 val initSymbolTable  : int -> unit
 val openScope        : Types.typ -> entry -> unit
 val closeScope       : unit -> unit
-val newVariable      : Identifier.id -> Types.typ -> bool -> entry
+val newVariable      : Identifier.id -> Types.typ -> bool -> int -> entry
 val newFunction      : Identifier.id -> bool -> entry
 val newParameter     : Identifier.id -> Types.typ -> pass_mode ->
-                                        entry -> bool -> entry
+                                        entry -> bool -> int -> entry
 val newTemporary     : Types.typ -> entry
 
 val forwardFunction   : entry -> unit

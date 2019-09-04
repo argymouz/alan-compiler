@@ -40,7 +40,7 @@ let rec top_codegen tree optimization = (
 
 		(
 			if optimization = "yes" then
-			(
+                		(
 				add_memory_to_register_promotion the_fpm;
 				add_instruction_combination the_fpm;
 				add_reassociation the_fpm;

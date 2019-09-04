@@ -61,7 +61,7 @@ and entry = {
   entry_id    : Identifier.id;
   entry_scope : scope;
   entry_info  : entry_info;
-  frame_place : int option;
+  frame_place : int;
 }
 
 type lookup_type = LOOKUP_CURRENT_SCOPE | LOOKUP_ALL_SCOPES
@@ -82,7 +82,7 @@ let no_entry id = {
   entry_id = id;
   entry_scope = the_outer_scope;
   entry_info = ENTRY_none;
-  frame_place = None;
+  frame_place = 0;
 }
 
 let currentScope = ref the_outer_scope
@@ -132,7 +132,7 @@ let newEntry id inf err place =
       entry_id = id;
       entry_scope = !currentScope;
       entry_info = inf;
-      frame_place = Some place;
+      frame_place = place;
     } in
     H.add !tab id e;
     !currentScope.sco_entries <- e :: !currentScope.sco_entries;
@@ -195,7 +195,7 @@ let newFunction id err =
       function_pstatus = PARDEF_DEFINE;
       function_initquad = 0
     } in
-    newEntry id (ENTRY_function inf) false None
+    newEntry id (ENTRY_function inf) false (-1)
 
 let newParameter id typ mode f err place =
   match f.entry_info with
@@ -253,7 +253,7 @@ let newTemporary typ =
     temporary_offset = !currentScope.sco_negofs
   } in
   incr tempNumber;
-  newEntry id (ENTRY_temporary inf) false None
+  newEntry id (ENTRY_temporary inf) false (-1)
 
 let forwardFunction e =
   match e.entry_info with
