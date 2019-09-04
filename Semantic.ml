@@ -213,11 +213,14 @@ let rec typing node =
 			(
 				let p = deopt((!currentScope).sco_func_entry) in
 				match d_type with
-				| Int -> let u = newParameter(id_make name) TYPE_int PASS_BY_VALUE p true !i in ignore u;
-				| Byte -> let u = newParameter(id_make name) TYPE_byte PASS_BY_VALUE p true !i in ignore u;
+				| Int -> let u = newParameter(id_make name) TYPE_int PASS_BY_VALUE p true !i in 
+                                        ignore u;
+                                        ignore(i := !i + 1);
+				| Byte -> let u = newParameter(id_make name) TYPE_byte PASS_BY_VALUE p true !i in
+                                        ignore u;
+                                        ignore(i := !i + 1);
 				| IntArr -> error "Non-ref array param"
-				| ByteArr -> error "Non-ref arrat param"
-				ignore(i := !i + 1);
+				| ByteArr -> error "Non-ref array param"
 			)
 		end;
 		Fpar_def_t(name, d_type, Stmt)
@@ -256,10 +259,13 @@ let rec typing node =
 			let i = Stack.top place_stack in
 			(
 				match d_type with
-				| Int -> let u = newVariable(id_make name) TYPE_int true i in ignore u;
-				| Byte -> let u = newVariable(id_make name) TYPE_byte true i in ignore u;
+				| Int -> let u = newVariable(id_make name) TYPE_int true i in
+                                        ignore u;
+                                        ignore(i := !i + 1);
+				| Byte -> let u = newVariable(id_make name) TYPE_byte true i in
+                                        ignore u;
+                                        ignore(i := !i + 1);
 				| _ -> error "Fatal error"
-				ignore(i := !i + 1);
 			)
 		end;
 		Var_def_t(name,d_type,Stmt)
