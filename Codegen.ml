@@ -94,8 +94,8 @@ and codegen tree =
                                 let fr = create_entry_block_alloca f (String.concat "." [name; "fr"]) frame_type in (* allocate the stack frame *)
 				(
 					init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
-					ignore(List.map codegen_loc_fun loc_def_l);
-					ignore(codegen_body comp_body fr);
+					ignore(List.map codegen_loc_fun loc_def_l); (* generate all locally defined functions *)
+					ignore(codegen_body comp_body fr); (* codegen the body *)
 					ignore(Stack.pop type_stack);
 					Llvm_analysis.assert_valid_function f;
 					let _ = PassManager.run_function f the_fpm in
@@ -314,15 +314,15 @@ and codegen_ref node fr =
 	)
 	| _ -> codegen_body node fr
 
-and codegen_call callee fr i arg =
-	let typ_param = type_of((params callee).(i)) in
+(*and codegen_call callee fr i arg =
+	let typ_param = type_of((params callee).(i + 1)) in
 	let str_param = string_of_lltype(typ_param) in (
 	match str_param with
 	| "i16" -> (codegen_body arg fr)
 	| "i8" -> (codegen_body arg fr)
 	| "i16*" -> (codegen_ref arg fr)
 	| "i8*" -> (codegen_ref arg fr)
-	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n"))
+	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n"))*)
 
 and codegen_loc_fun node =
 	match node with
@@ -402,13 +402,13 @@ and add_frame_ptr_typ name arr =
 
 and init_fr fr param_arr idx n =
 	match idx with
-	| n -> ()
+	| n -> () (* stop when you cover all parameters *)
 	| _ ->
 	(
-		let st_addr = build_in_bounds_gep fr [| const_int myint idx |] "" builder in
+		let st_addr = build_in_bounds_gep fr [| const_int myint idx |] "" builder in (* get the element's address *)
 		(
-			ignore(build_store param_arr.(idx) st_addr builder);
-			init_fr fr param_arr (idx + 1) n
+			ignore(build_store param_arr.(idx) st_addr builder); (* store the value passed by the caller there *)
+			init_fr fr param_arr (idx + 1) n (* proceed with the rest of the elements *)
 		)
 	)
 
@@ -449,6 +449,7 @@ and ll_typ a =
 	| Byte -> mybyte
 	| IntArr -> myintref
 	| ByteArr -> mybyteref
+        | _ -> raise (Failure "Invalid type!")
 
 and ll_typ_ref a =
 	match a with
@@ -456,6 +457,7 @@ and ll_typ_ref a =
 	| Byte -> mybyteref
 	| IntArr -> myintref
 	| ByteArr -> mybyteref
+        | _ -> raise (Failure "Invalid type!")
 
 and ret_ll_typ a =
 	match a with
@@ -466,7 +468,7 @@ and ret_ll_typ a =
 
 (* this function and the next operate on arrays*)
 
-and extract_param_name a =
+(*and extract_param_name a =
 	match a with
 	| Fpar_def_t(name, dtyp, _) -> name
 	| Fpar_def_ref_t(name, dtyp, _) -> name
@@ -490,12 +492,12 @@ and extract_param_type a =
 		| ByteArr ->  mybyteref
 	)
 	| _ -> raise (Failure "Improper extract_param_type usage")
-
+*)
 (* this function operates on lists *)
 
 and extract_loc_var_def_type lst type_lst = 
 	match lst with
-	| [] -> List.rev type_lst
+        | [] -> List.rev type_lst
 	| h::t ->
 	(
 		match h with
@@ -535,3 +537,38 @@ and deopt_lookup_function name =
 	match lookup_function name the_module with
 	| Some callee -> callee
 	| None -> raise(Failure "Shouldn't happen. Already checked")
+
+and codegen_call callee fr i arg =
+	let typ_param = type_of((params callee).(i + 1)) in
+	let str_param = string_of_lltype(typ_param) in (
+	match str_param with
+	| "i16" -> (codegen_body arg fr)
+	| "i8" -> (codegen_body arg fr)
+	| "i16*" -> (codegen_ref arg fr)
+	| "i8*" -> (codegen_ref arg fr)
+	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n"))
+
+and extract_param_name a =
+	match a with
+	| Fpar_def_t(name, dtyp, _) -> name
+	| Fpar_def_ref_t(name, dtyp, _) -> name
+	| _ -> raise (Failure "Improper extract_param_name usage")
+
+and extract_param_type a =
+	match a with
+	| Fpar_def_t(name, dtyp, _) ->
+	(
+		match dtyp with
+		| Int -> myint
+		| Byte -> mybyte
+		| _ -> raise (Failure "Improper extract_param_type usage")
+	)
+        | Fpar_def_ref_t(name, dtyp, _) ->
+	(
+		match dtyp with
+		| Int -> myintref
+		| Byte -> mybyteref
+		| IntArr -> myintref
+		| ByteArr ->  mybyteref
+	)
+	| _ -> raise (Failure "Improper extract_param_type usage")
