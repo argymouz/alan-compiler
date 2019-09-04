@@ -57,7 +57,7 @@ let rec top_codegen tree optimization = (
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n")
 )
 	
-and codegen tree = 
+and codegen tree = (
 	match tree with
 	| Program_t(program, dtyp) -> 
 		raise (Failure "CODEGEN CALLED FOR PROGRAM NODE\n")
@@ -104,7 +104,7 @@ and codegen tree =
 			)
 		)
 	)
-        | _ -> raise (Failure "This should not happen!\n")
+        | _ -> raise (Failure "This should not happen!\n"))
 
 and codegen_body body fr =
 	match body with
@@ -314,15 +314,15 @@ and codegen_ref node fr =
 	)
 	| _ -> codegen_body node fr
 
-(*and codegen_call callee fr i arg =
+and codegen_call callee fr i arg = 
 	let typ_param = type_of((params callee).(i + 1)) in
-	let str_param = string_of_lltype(typ_param) in (
+	let str_param = string_of_lltype(typ_param) in
 	match str_param with
 	| "i16" -> (codegen_body arg fr)
 	| "i8" -> (codegen_body arg fr)
 	| "i16*" -> (codegen_ref arg fr)
 	| "i8*" -> (codegen_ref arg fr)
-	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n"))*)
+	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n")
 
 and codegen_loc_fun node =
 	match node with
@@ -443,37 +443,39 @@ and declare_runtimes the_module =
 	let f = declare_function "strcat" ft the_module in
 	()
 
-and ll_typ a =
+and ll_typ a = (
 	match a with
 	| Int -> myint
 	| Byte -> mybyte
 	| IntArr -> myintref
 	| ByteArr -> mybyteref
-        | _ -> raise (Failure "Invalid type!")
+        | _ -> raise (Failure "Invalid type!"))
 
-and ll_typ_ref a =
+and ll_typ_ref a = (
 	match a with
 	| Int -> myintref
 	| Byte -> mybyteref
 	| IntArr -> myintref
 	| ByteArr -> mybyteref
-        | _ -> raise (Failure "Invalid type!")
+        | _ -> raise (Failure "Invalid type!"))
 
-and ret_ll_typ a =
+and ret_ll_typ a = (
 	match a with
 	| Data_type(Int) -> myint
 	| Data_type(Byte) -> mybyte
 	| Proc -> myvoid
-	| _ -> raise (Failure "Invalid ret type!\n")
+	| _ -> raise (Failure "Invalid ret type!\n"))
 
 (* this function and the next operate on arrays*)
 
-(*and extract_param_name a =
+(* problematic *)
+and extract_param_name a =
 	match a with
 	| Fpar_def_t(name, dtyp, _) -> name
 	| Fpar_def_ref_t(name, dtyp, _) -> name
 	| _ -> raise (Failure "Improper extract_param_name usage")
 
+(* problematic *)
 and extract_param_type a =
 	match a with
 	| Fpar_def_t(name, dtyp, _) ->
@@ -492,9 +494,9 @@ and extract_param_type a =
 		| ByteArr ->  mybyteref
 	)
 	| _ -> raise (Failure "Improper extract_param_type usage")
-*)
-(* this function operates on lists *)
 
+(* this function operates on lists *)
+(* problematic *)
 and extract_loc_var_def_type lst type_lst = 
 	match lst with
         | [] -> List.rev type_lst
@@ -519,6 +521,7 @@ and extract_loc_var_def_type lst type_lst =
 		| _ -> raise (Failure "Improper extract_loc_var_def_type usage")
 	)
 
+(* problematic *)
 and opt_list_to_array lst =
 	match lst with
 	| None -> Array.make 0 Empty_t
@@ -528,47 +531,13 @@ and opt_list_to_array lst =
 		Array.concat tmplist
 	)
 
-and deopt_l a =
+(* this function is useless and will probably be deleted soon *)
+(*and deopt_l a =
 	match a with
 	| None -> []
-	| Some a -> a
+	| Some a -> a*)
 
 and deopt_lookup_function name =
 	match lookup_function name the_module with
 	| Some callee -> callee
 	| None -> raise(Failure "Shouldn't happen. Already checked")
-
-and codegen_call callee fr i arg =
-	let typ_param = type_of((params callee).(i + 1)) in
-	let str_param = string_of_lltype(typ_param) in (
-	match str_param with
-	| "i16" -> (codegen_body arg fr)
-	| "i8" -> (codegen_body arg fr)
-	| "i16*" -> (codegen_ref arg fr)
-	| "i8*" -> (codegen_ref arg fr)
-	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n"))
-
-and extract_param_name a =
-	match a with
-	| Fpar_def_t(name, dtyp, _) -> name
-	| Fpar_def_ref_t(name, dtyp, _) -> name
-	| _ -> raise (Failure "Improper extract_param_name usage")
-
-and extract_param_type a =
-	match a with
-	| Fpar_def_t(name, dtyp, _) ->
-	(
-		match dtyp with
-		| Int -> myint
-		| Byte -> mybyte
-		| _ -> raise (Failure "Improper extract_param_type usage")
-	)
-        | Fpar_def_ref_t(name, dtyp, _) ->
-	(
-		match dtyp with
-		| Int -> myintref
-		| Byte -> mybyteref
-		| IntArr -> myintref
-		| ByteArr ->  mybyteref
-	)
-	| _ -> raise (Failure "Improper extract_param_type usage")
