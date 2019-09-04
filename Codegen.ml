@@ -22,7 +22,7 @@ let myvoid = void_type context
 
 let eet_flag = ref 0 (* what the hell is this??? *)
 
-let type_stack = Stack.create
+let type_stack = Stack.create ()
 
 let create_entry_block_alloca the_function var_name var_type =
 	let builder = builder_at context (instr_begin (entry_block the_function)) in
@@ -82,10 +82,10 @@ and codegen tree =
 			let frame_type_str = string_of_lltype frame_type in
 			(
 				(
-					if (Stack.is_empty type_stack) then (ignore(Stack.push frame_type_str);)
+					if (Stack.is_empty type_stack) then (ignore(Stack.push frame_type_str type_stack);)
 					else (
-						let prev_top = Stack.top name_stack in
-						let curr_top = String.concat "_" [frame_type_str, prev_top] in
+						let prev_top = Stack.top type_stack in
+                                                let curr_top = String.concat "_" [frame_type_str; prev_top] in
 						ignore(Stack.push curr_top frame_stack);
                 			)
 				);
@@ -333,7 +333,7 @@ and codegen_loc_fun node =
 and codegen_search_frames () =
 	let ft = function_type (myint) [| myint; myint |] in
 	let f = declare_function "search_frames" ft the_module in
-	let param_arr = params f
+	let param_arr = params f in
 	(
 		set_value_name "fr_first_elem_addr" param_arr.(0);
 		set_value_name "depth" param_arr.(1);
