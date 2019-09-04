@@ -5,9 +5,9 @@ open Identifier
 open Types
 open Symbol
 
-let name_stack = Stack.create
+let name_stack = Stack.create ()
 
-let place_stack = Stack.create
+let place_stack = Stack.create ()
 
 let register_functions() =
 	
@@ -158,11 +158,11 @@ let rec typing node =
 	| Func_def(name, par_l, ret_type, loc_def_l, comp_body) ->
 	(
 		(
-			if (Stack.is_empty name_stack) then (ignore(Stack.push name);)
+			if (Stack.is_empty (name_stack)) then (ignore(Stack.push name name_stack);)
 			else
 			(
 				let prev_top = Stack.top name_stack in
-				let curr_top = String.concat "_" [prev_top, name] in
+                                let curr_top = String.concat "_" [prev_top; name] in
 				ignore(Stack.push curr_top name_stack);
 			)
 		);
