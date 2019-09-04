@@ -167,7 +167,7 @@ let rec typing node =
 			)
 		);
 		let place = place_ptr name in (
-			Stack.push place_stack place;
+			Stack.push place place_stack;
 			let p = newFunction (id_make name) true in
 			begin
 				match ret_type with
@@ -232,25 +232,28 @@ let rec typing node =
 				match d_type with
 				| Int ->
 				(
-					let u = newParameter(id_make name) TYPE_int PASS_BY_REFERENCE p true i in 
+					let u = newParameter(id_make name) TYPE_int PASS_BY_REFERENCE p true !i in 
 					ignore(u);
+                                        ignore(i := !i + 1);
 				)
 				| Byte ->
 				(
-					let u = newParameter(id_make name) TYPE_byte PASS_BY_REFERENCE p true i in
+					let u = newParameter(id_make name) TYPE_byte PASS_BY_REFERENCE p true !i in
 					ignore(u);
+                                        ignore(i := !i + 1);
 				)
 				| IntArr ->
 				(
-					let u = newParameter(id_make name) (TYPE_array(TYPE_int, 0)) PASS_BY_REFERENCE p true i in
+					let u = newParameter(id_make name) (TYPE_array(TYPE_int, 0)) PASS_BY_REFERENCE p true !i in
 					ignore(u);
+                                        ignore(i := !i + 1);
 				)
 				| ByteArr ->
 				(
-					let u = newParameter(id_make name) (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true i in
+					let u = newParameter(id_make name) (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true !i in
 					ignore(u);
+                                        ignore(i := !i + 1);
 				)
-				ignore(i := !i + 1);
 			)
 		end;
 		Fpar_def_ref_t(name, d_type, Stmt)
@@ -259,10 +262,10 @@ let rec typing node =
 			let i = Stack.top place_stack in
 			(
 				match d_type with
-				| Int -> let u = newVariable(id_make name) TYPE_int true i in
+				| Int -> let u = newVariable(id_make name) TYPE_int true !i in
                                         ignore u;
                                         ignore(i := !i + 1);
-				| Byte -> let u = newVariable(id_make name) TYPE_byte true i in
+				| Byte -> let u = newVariable(id_make name) TYPE_byte true !i in
                                         ignore u;
                                         ignore(i := !i + 1);
 				| _ -> error "Fatal error"
@@ -275,10 +278,13 @@ let rec typing node =
 			let i = Stack.top place_stack in
 			(
 				match d_type with
-				| Int -> let u = newVariable(id_make name) (TYPE_array(TYPE_int, size)) true i in ignore(u);
-				| Byte -> let u = newVariable(id_make name) (TYPE_array(TYPE_byte, size)) true i in ignore(u);
+				| Int -> let u = newVariable(id_make name) (TYPE_array(TYPE_int, size)) true !i in 
+                                        ignore(u);
+                                        ignore(i := !i + 1);
+				| Byte -> let u = newVariable(id_make name) (TYPE_array(TYPE_byte, size)) true !i in 
+                                        ignore(u);
+                                        ignore(i := !i + 1);
 				|_ -> error "Fatal error"
-				ignore(i := !i + 1);
 			)
 		end;
 		Var_def_arr_t(name, d_type, size, Stmt)
@@ -544,7 +550,7 @@ and get_type node =
 	| Fpar_def_ref_t(_, _, _) -> Stmt 
 	| Var_def_t(_, _, _) -> Stmt
 	| Var_def_arr_t(_, _, _, _) -> Stmt
-	| Func_call_t(_, _, t) -> t
+	| Func_call_t(_, _, _, t) -> t
 	| If_t(_, _, _) -> Stmt
     	| If_Else_t(_, _, _, _) -> Stmt
     	| While_t(_, _, _) -> Stmt
