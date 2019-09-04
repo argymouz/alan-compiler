@@ -20,7 +20,7 @@ let mybyteref = pointer_type mybyte
 let myintref = pointer_type myint
 let myvoid = void_type context
 
-let eet_flag = ref 0 (* what the hell is this??? *)
+let ret_flag = ref 0
 
 let type_stack = Stack.create ()
 
@@ -86,15 +86,15 @@ and codegen tree =
 					else (
 						let prev_top = Stack.top type_stack in
                                                 let curr_top = String.concat "_" [frame_type_str; prev_top] in
-						ignore(Stack.push curr_top frame_stack);
+						ignore(Stack.push curr_top type_stack);
                 			)
 				);
 				let llvm_fr_str = build_global_string frame_type_str "" builder in
 				let bb = append_block context "entry" f in
-				let fr = create_entry_block_alloca f (String.concat "." [name, "fr"]) frame_type in
+                                let fr = create_entry_block_alloca f (String.concat "." [name; "fr"]) frame_type in
 				(
 					init_fr fr param_arr 0 (Array.length param_arr);
-					List.map codegen_loc_func loc_def_l;
+					ignore(List.map codegen_loc_fun loc_def_l);
 					ignore(codegen_body comp_body fr);
 					ignore(Stack.pop type_stack);
 					Llvm_analysis.assert_valid_function f;
@@ -115,7 +115,7 @@ and codegen_body body fr =
 		(
 			match stmt with
 			| Return_t(_, _) -> ret_flag := 1; codegen_body stmt fr
-			| _ -> ignore(codegen_body stmt fr); codegen_body Compound_t(stmt_rest, dtyp) fr
+			| _ -> ignore(codegen_body stmt fr); codegen_body (Compound_t(stmt_rest, dtyp)) fr
 		)
 	)
 	| Func_call_t(name, depth, args_l, typ) ->
@@ -213,25 +213,27 @@ and codegen_body body fr =
 		ret_flag := 0;
 		position_at_end after_bb builder;
 		const_null myint
+	| Assign_t(lhs, rhs, dtyp) ->
+		let target = codegen_ref lhs fr in
+		let source = codegen_body rhs fr in
+		build_store source target builder
 	| Return_t(ret, dtyp) ->
+        (
 		match ret with
 		| None -> build_ret_void builder
 		| Some expr ->
 			let tmp = codegen_body expr fr in
 			build_ret tmp builder
-	| Assign_t(lhs, rhs, dtyp) ->
-		let target = codegen_body_ref lhs fr in
-		let source = codegen_body rhs fr in
-		build_store source target builder
+        )                
 	| Unop_t(op, rhs, typ) ->
-		let rhs_val = codegen_body rhs fr in
+		let rhs_val = codegen_body rhs fr in (
 		match op with
 		| Neg -> build_not rhs_val "nottmp" builder
 		| Plus -> rhs_val
-		| Minus -> build_neg rhs_val "negmp" builder
+		| Minus -> build_neg rhs_val "negmp" builder)
         | Binop_t(lhs, op, rhs, typ) ->
 		let lhs_val = codegen_body lhs fr in
-		let rhs_val = codegen_body rhs fr in
+		let rhs_val = codegen_body rhs fr in (
 		match op with
 		| Plus -> build_add lhs_val rhs_val "addtmp" builder
 		| Minus -> build_sub lhs_val rhs_val "subtmp" builder
@@ -246,14 +248,14 @@ and codegen_body body fr =
 		| Lessequ -> build_icmp Icmp.Ule lhs_val rhs_val "lessequtmp" builder
 		| And -> build_and lhs_val rhs_val "andtmp" builder
 		| Or -> build_or lhs_val rhs_val "ortmp" builder
-		| _ -> raise (Failure "Binary OP problem in codegen")
-	| Const_t(t, typ) ->
+		| _ -> raise (Failure "Binary OP problem in codegen"))
+	| Const_t(t, typ) -> (
 		match t with
 		| Int(value) -> const_int myint value
 		| Char(value) -> const_int mybyte value
 		| True -> const_int mybyte 1
-		| False -> const_int mybyte 0
-	| Lvalue_t(first, depth, place, dtyp) ->
+		| False -> const_int mybyte 0)
+	| Lvalue_t(first, depth, place, dtyp) -> (
 		match first with
 		| Variable(name) ->
 		(
@@ -285,7 +287,7 @@ and codegen_body body fr =
 			let str = string_of_chars charlist1 in
 			let p = build_global_string str "strtmp" builder in
 			build_in_bounds_gep p [| const_int myint 0; const_int myint 0 |] "arr_strtmp" builder
-		| _ -> raise (Failure "Unimplemented")
+		| _ -> raise (Failure "Unimplemented"))
 	| Empty_t -> const_null myint
 	| _ -> raise (Failure "CODEGEN CALLED FOR PARAM")
 
@@ -312,14 +314,14 @@ and codegen_ref node fr =
 	| _ -> codegen_body node fr
 
 and codegen_call callee fr i arg =
-	let typ_param = type_of((params f).(i)) in
-	let str_param = string_of_lltype(typ_param) in
+	let typ_param = type_of((params callee).(i)) in
+	let str_param = string_of_lltype(typ_param) in (
 	match str_param with
 	| "i16" -> (codegen_body arg fr)
 	| "i8" -> (codegen_body arg fr)
-	| "i16*" -> (codegen_body_ref arg fr)
-	| "i8*" -> (codegen_body_ref arg fr)
-	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n")
+	| "i16*" -> (codegen_ref arg fr)
+	| "i8*" -> (codegen_ref arg fr)
+	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n"))
 
 and codegen_loc_fun node =
 	match node with
