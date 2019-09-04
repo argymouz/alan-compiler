@@ -1,0 +1,29 @@
+
+** Conflict (shift/reduce) in state 41.
+** Token involved: T_rparen
+** This state is reached from program after reading:
+
+T_id T_lparen option(fpar_list) T_rparen T_col r_type list(local_def) T_lbrace T_id T_lparen 
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+program 
+func_def T_eof 
+T_id T_lparen option(fpar_list) T_rparen T_col r_type list(local_def) compound_stmt 
+                                                                      T_lbrace list(stmt) T_rbrace 
+                                                                               stmt list(stmt) 
+                                                                               func_call T_semicol 
+                                                                               (?)
+
+** In state 41, looking ahead at T_rparen, shifting is permitted
+** because of the following sub-derivation:
+
+T_id T_lparen . T_rparen 
+
+** In state 41, looking ahead at T_rparen, reducing production
+** option(expr_list) -> 
+** is permitted because of the following sub-derivation:
+
+T_id T_lparen option(expr_list) T_rparen // lookahead token appears
+              . 

@@ -1,0 +1,256 @@
+1
+1
+1
+1
+1
+3
+1
+1
+1
+1
+3
+1
+3
+3
+1
+3
+1
+1
+3
+1
+3
+1
+1
+1
+3
+1
+1
+1
+1
+1
+3
+1
+1
+3
+1
+1
+Compilation SUCCEEDED :D
+; ModuleID = 'alan'
+source_filename = "alan"
+
+@strtmp = private unnamed_addr constant [8 x i8] c"Limit: \00"
+@strtmp.1 = private unnamed_addr constant [9 x i8] c"Primes:\0A\00"
+@strtmp.2 = private unnamed_addr constant [2 x i8] c"\0A\00"
+@strtmp.3 = private unnamed_addr constant [2 x i8] c"\0A\00"
+@strtmp.4 = private unnamed_addr constant [2 x i8] c"\0A\00"
+@strtmp.5 = private unnamed_addr constant [2 x i8] c"\0A\00"
+@strtmp.6 = private unnamed_addr constant [9 x i8] c"\0ATotal: \00"
+@strtmp.7 = private unnamed_addr constant [2 x i8] c"\0A\00"
+
+declare void @writeInteger(i16)
+
+declare void @writeByte(i8)
+
+declare void @writeChar(i8)
+
+declare void @writeString(i8*)
+
+declare i16 @readInteger()
+
+declare i8 @readByte()
+
+declare i8 @readhar()
+
+declare void @readString(i16, i8*)
+
+declare i16 @extend(i8)
+
+declare i8 @shrink(i16)
+
+declare i16 @strlen(i8*)
+
+declare i16 @strcmp(i8*, i8*)
+
+declare void @strcpy(i8*, i8*)
+
+declare void @strcat(i8*, i8*)
+
+define void @main() {
+entry:
+  %counter = alloca i16
+  %number = alloca i16
+  %limit = alloca i16
+  call void @writeString(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @strtmp, i16 0, i16 0))
+  %0 = call i16 @readInteger()
+  store i16 %0, i16* %limit
+  call void @writeString(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @strtmp.1, i16 0, i16 0))
+  store i16 0, i16* %counter
+  %loadtmp = load i16, i16* %limit
+  %morequtmp = icmp uge i16 %loadtmp, 2
+  br i1 %morequtmp, label %then, label %ifcont
+
+then:                                             ; preds = %entry
+  %loadtmp1 = load i16, i16* %counter
+  %addtmp = add i16 %loadtmp1, 1
+  store i16 %addtmp, i16* %counter
+  call void @writeInteger(i16 2)
+  call void @writeString(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @strtmp.2, i16 0, i16 0))
+  br label %ifcont
+
+ifcont:                                           ; preds = %then, %entry
+  %loadtmp2 = load i16, i16* %limit
+  %morequtmp3 = icmp uge i16 %loadtmp2, 3
+  br i1 %morequtmp3, label %then4, label %ifcont7
+
+then4:                                            ; preds = %ifcont
+  %loadtmp5 = load i16, i16* %counter
+  %addtmp6 = add i16 %loadtmp5, 1
+  store i16 %addtmp6, i16* %counter
+  call void @writeInteger(i16 3)
+  call void @writeString(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @strtmp.3, i16 0, i16 0))
+  br label %ifcont7
+
+ifcont7:                                          ; preds = %then4, %ifcont
+  store i16 6, i16* %number
+  br label %cond
+
+cond:                                             ; preds = %ifcont28, %ifcont7
+  %loadtmp8 = load i16, i16* %number
+  %loadtmp9 = load i16, i16* %limit
+  %lessequtmp = icmp ule i16 %loadtmp8, %loadtmp9
+  br i1 %lessequtmp, label %do, label %after
+
+after:                                            ; preds = %cond
+  call void @writeString(i8* getelementptr inbounds ([9 x i8], [9 x i8]* @strtmp.6, i16 0, i16 0))
+  %loadtmp31 = load i16, i16* %counter
+  call void @writeInteger(i16 %loadtmp31)
+  call void @writeString(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @strtmp.7, i16 0, i16 0))
+  ret void
+
+do:                                               ; preds = %cond
+  %loadtmp10 = load i16, i16* %number
+  %subtmp = sub i16 %loadtmp10, 1
+  %1 = call i16 @prime(i16 %subtmp)
+  %eqtmp = icmp eq i16 %1, 1
+  br i1 %eqtmp, label %then11, label %ifcont16
+
+then11:                                           ; preds = %do
+  %loadtmp12 = load i16, i16* %counter
+  %addtmp13 = add i16 %loadtmp12, 1
+  store i16 %addtmp13, i16* %counter
+  %loadtmp14 = load i16, i16* %number
+  %subtmp15 = sub i16 %loadtmp14, 1
+  call void @writeInteger(i16 %subtmp15)
+  call void @writeString(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @strtmp.4, i16 0, i16 0))
+  br label %ifcont16
+
+ifcont16:                                         ; preds = %then11, %do
+  %loadtmp17 = load i16, i16* %number
+  %loadtmp18 = load i16, i16* %limit
+  %eqtmp19 = icmp ne i16 %loadtmp17, %loadtmp18
+  %loadtmp20 = load i16, i16* %number
+  %addtmp21 = add i16 %loadtmp20, 1
+  %2 = call i16 @prime(i16 %addtmp21)
+  %eqtmp22 = icmp eq i16 %2, 1
+  %andtmp = and i1 %eqtmp19, %eqtmp22
+  br i1 %andtmp, label %then23, label %ifcont28
+
+then23:                                           ; preds = %ifcont16
+  %loadtmp24 = load i16, i16* %counter
+  %addtmp25 = add i16 %loadtmp24, 1
+  store i16 %addtmp25, i16* %counter
+  %loadtmp26 = load i16, i16* %number
+  %addtmp27 = add i16 %loadtmp26, 1
+  call void @writeInteger(i16 %addtmp27)
+  call void @writeString(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @strtmp.5, i16 0, i16 0))
+  br label %ifcont28
+
+ifcont28:                                         ; preds = %then23, %ifcont16
+  %loadtmp29 = load i16, i16* %number
+  %addtmp30 = add i16 %loadtmp29, 6
+  store i16 %addtmp30, i16* %number
+  br label %cond
+}
+
+define i16 @prime(i16 %n) {
+entry:
+  %i = alloca i16
+  %n1 = alloca i16
+  store i16 %n, i16* %n1
+  %loadtmp = load i16, i16* %n1
+  %lesstmp = icmp ult i16 %loadtmp, 0
+  br i1 %lesstmp, label %then, label %else
+
+then:                                             ; preds = %entry
+  %loadtmp2 = load i16, i16* %n1
+  %negmp = sub i16 0, %loadtmp2
+  %0 = call i16 @prime(i16 %negmp)
+  ret i16 %0
+
+ifcont:                                           ; preds = %ifcont6
+  ret i16 0
+
+else:                                             ; preds = %entry
+  %loadtmp3 = load i16, i16* %n1
+  %lesstmp4 = icmp ult i16 %loadtmp3, 2
+  br i1 %lesstmp4, label %then5, label %else7
+
+then5:                                            ; preds = %else
+  ret i16 0
+
+ifcont6:                                          ; preds = %ifcont10
+  br label %ifcont
+
+else7:                                            ; preds = %else
+  %loadtmp8 = load i16, i16* %n1
+  %eqtmp = icmp eq i16 %loadtmp8, 2
+  br i1 %eqtmp, label %then9, label %else11
+
+then9:                                            ; preds = %else7
+  ret i16 1
+
+ifcont10:                                         ; preds = %ifcont15
+  br label %ifcont6
+
+else11:                                           ; preds = %else7
+  %loadtmp12 = load i16, i16* %n1
+  %modtmp = urem i16 %loadtmp12, 2
+  %eqtmp13 = icmp eq i16 %modtmp, 0
+  br i1 %eqtmp13, label %then14, label %else16
+
+then14:                                           ; preds = %else11
+  ret i16 0
+
+ifcont15:                                         ; No predecessors!
+  br label %ifcont10
+
+else16:                                           ; preds = %else11
+  store i16 3, i16* %i
+  br label %cond
+
+cond:                                             ; preds = %ifcont24, %else16
+  %loadtmp17 = load i16, i16* %i
+  %loadtmp18 = load i16, i16* %n1
+  %divtmp = udiv i16 %loadtmp18, 2
+  %lessequtmp = icmp ule i16 %loadtmp17, %divtmp
+  br i1 %lessequtmp, label %do, label %after
+
+after:                                            ; preds = %cond
+  ret i16 1
+
+do:                                               ; preds = %cond
+  %loadtmp19 = load i16, i16* %n1
+  %loadtmp20 = load i16, i16* %i
+  %modtmp21 = urem i16 %loadtmp19, %loadtmp20
+  %eqtmp22 = icmp eq i16 %modtmp21, 0
+  br i1 %eqtmp22, label %then23, label %ifcont24
+
+then23:                                           ; preds = %do
+  ret i16 0
+
+ifcont24:                                         ; preds = %do
+  %loadtmp25 = load i16, i16* %i
+  %addtmp = add i16 %loadtmp25, 2
+  store i16 %addtmp, i16* %i
+  br label %cond
+}
