@@ -325,8 +325,8 @@ and opt_list_to_array lst =
 
 and opt_list_to_array_ll lst =
 	match lst with
-	| None -> Array.make 0 (i64_type context)
-	| Some lista ->
+        | [] -> Array.make 0 (i64_type context)
+	| lista ->
 	(
 		let tmplista = List.map (Array.make 1) lista in
 		Array.concat tmplista
