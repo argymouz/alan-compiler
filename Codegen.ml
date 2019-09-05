@@ -76,7 +76,7 @@ and codegen tree = (
 				set_value_name n a;
 			) param_arr;
 			let type_lst = extract_loc_var_def_type loc_def_l [] in (* extract the types of local variables *)
-			let type_arr = opt_list_to_array type_lst in (* convert list to array *)
+			let type_arr = opt_list_to_array_ll type_lst in (* convert list to array *)
 			let frame_typ_arr = Array.append par_typ_arr type_arr in (* create the array with the type of the frame *)
 			let frame_type = struct_type context frame_typ_arr in (* create the frame *)
 			let frame_type_str = string_of_lltype frame_type in
@@ -314,6 +314,24 @@ and codegen_ref node fr =
 	)
 	| _ -> codegen_body node fr
 
+and opt_list_to_array lst =
+	match lst with
+	| None -> Array.make 0 Empty_t
+	| Some lista ->
+	(
+		let tmplista = List.map (Array.make 1) lista in
+		Array.concat tmplista
+	)
+
+and opt_list_to_array_ll lst =
+	match lst with
+	| None -> Array.make 0 (i64_type context)
+	| Some lista ->
+	(
+		let tmplista = List.map (Array.make 1) lista in
+		Array.concat tmplista
+	)
+
 and codegen_call callee fr i arg = 
 	let typ_param = type_of((params callee).(i + 1)) in
 	let str_param = string_of_lltype(typ_param) in
@@ -468,14 +486,12 @@ and ret_ll_typ a = (
 
 (* this function and the next operate on arrays*)
 
-(* problematic *)
 and extract_param_name a =
 	match a with
 	| Fpar_def_t(name, dtyp, _) -> name
 	| Fpar_def_ref_t(name, dtyp, _) -> name
 	| _ -> raise (Failure "Improper extract_param_name usage")
 
-(* problematic *)
 and extract_param_type a =
 	match a with
 	| Fpar_def_t(name, dtyp, _) ->
@@ -519,16 +535,6 @@ and extract_loc_var_def_type lst type_lst =
 		)
 		| Func_def_t(_) -> extract_loc_var_def_type t type_lst
 		| _ -> raise (Failure "Improper extract_loc_var_def_type usage")
-	)
-
-(* problematic *)
-and opt_list_to_array lst =
-	match lst with
-	| None -> Array.make 0 Empty_t
-	| Some lista ->
-	(
-		let tmplista = List.map (Array.make 1) lista in
-		Array.concat tmplist
 	)
 
 (* this function is useless and will probably be deleted soon *)
