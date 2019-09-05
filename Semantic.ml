@@ -150,7 +150,7 @@ let rec typing node =
 		| Func_def(name, par_l, ret_type, loc_def_l, comp_body) -> 
 			if name = "main" then (Program_t(typing ast1, Stmt))
 			else (
-				let newmain = Func_def("main", (Some []), Proc, [ast1], Compound([Func_call(name, None)])) in
+				let newmain = Func_def("main", (Some []), Proc, loc_def_l, comp_body) in
 				Program_t(typing newmain, Stmt)
 			)
 		| _ -> raise (Failure "Top function is no function\n")
@@ -166,12 +166,13 @@ let rec typing node =
 				ignore(Stack.push curr_top name_stack);
 			)
 		);
+                Printf.printf "%s\n" (Stack.top name_stack);
 		let place = place_ptr name in (
 			Stack.push place place_stack;
 			let p = newFunction (id_make name) true in
 			begin
 				match ret_type with
-				| Proc -> openScope TYPE_proc p;
+                                | Proc -> openScope TYPE_proc p;
 				| Data_type(Int) -> openScope TYPE_int p;
 				| Data_type(Byte) -> openScope TYPE_byte p;
 				| _ -> error "Invalid ret type"
@@ -297,7 +298,8 @@ let rec typing node =
 					let name_lst = String.split_on_char '_' (Stack.top name_stack) in
 					let llvm_name_lst = create_llvm_name_lst name_lst (func.entry_scope.sco_nesting - 1) [] in
 					let llvm_name = String.concat "_" (llvm_name_lst@[name]) in
-					let arg_l_t = do_all_opt(typing, arg_l) in 
+					let arg_l_t = do_all_opt(typing, arg_l) in
+
 					check_types_l_opt_ref(arg_l_t, fn.function_paramlist);
 					let ret = fn.function_result in
 					let depth = (!currentScope).sco_nesting - func.entry_scope.sco_nesting + 1 in
@@ -529,12 +531,13 @@ let rec typing node =
 
 and create_llvm_name_lst name_lst depth out_lst =
 	match depth with
+        | (-1) -> [] (* this is in case main or some library function is involved where nesting level is 0 so subtracting 1 gives -1 (see above) *)
 	| 0 -> List.rev out_lst
 	| _ ->
 	(
 		match name_lst with
 		| h::t -> create_llvm_name_lst t (depth - 1) (h::out_lst)
-		| _ -> raise (Failure "Should never happen")
+		| _ -> raise (Failure "This should never happen!")
 	)
 
 and place_ptr name =
@@ -610,7 +613,7 @@ and check_types_l_opt_ref(real_par_l_opt,typ_par_l)=
 
 and check_types_l_ref(real_par_l, typ_par_l) =
 (
-	match (real_par_l,typ_par_l) with
+        match (real_par_l,typ_par_l) with
 	| ([],[]) -> ();
 	| (x::xr, y::yr) ->
 	(
@@ -632,5 +635,5 @@ and check_types_l_ref(real_par_l, typ_par_l) =
 		else error "Impossible cant be neither"
 		| _ -> error "Impossible, typ param is not param"
 	)
-	| _ -> error "Amount of typ and real params is not equal"
+	| _ -> Printf.printf "test\n"; error "Amount of typ and real params is not equal"
 )

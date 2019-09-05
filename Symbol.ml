@@ -195,7 +195,7 @@ let newFunction id err =
       function_pstatus = PARDEF_DEFINE;
       function_initquad = 0
     } in
-    newEntry id (ENTRY_function inf) false (-1)
+    newEntry id (ENTRY_function inf) false (-1) (* the last argument involves place in the stack frame, but functions don't have one *)
 
 let newParameter id typ mode f err place =
   match f.entry_info with

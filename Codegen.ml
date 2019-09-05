@@ -120,8 +120,8 @@ and codegen_body body fr =
 		)
 	)
 	| Func_call_t(name, depth, args_l, typ) ->
-		let callee = deopt_lookup_function name in
-		let args_array = opt_list_to_array args_l in
+                let callee = deopt_lookup_function name in
+                let args_array = opt_list_to_array args_l in
 		let args = Array.mapi (codegen_call callee fr) args_array in
 		let search_frames = deopt_lookup_function "search_frames" in
 		let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
@@ -260,7 +260,6 @@ and codegen_body body fr =
 		match first with
 		| Variable(name) ->
 		(
-			Printf.printf ("1\n");
 			let search_frames = deopt_lookup_function "search_frames" in
 			let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
 			let parent_frame = build_load parent_frame_ptr "" builder in
@@ -269,7 +268,6 @@ and codegen_body body fr =
 		)
 		| Arr(name, index) ->
 		(
-			Printf.printf ("2\n");
 			let search_frames = deopt_lookup_function "search_frames" in
 			let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
 			let parent_frame = build_load parent_frame_ptr "" builder in
@@ -296,7 +294,6 @@ and codegen_ref node fr =
 	match node with
         | Lvalue_t(Variable(name), depth, place, _) ->
 	(
-		Printf.printf ("3\n");
 		let search_frames = deopt_lookup_function "search frames" in
 		let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
 		let parent_frame = build_load parent_frame_ptr "" builder in
@@ -304,7 +301,6 @@ and codegen_ref node fr =
 	)
         | Lvalue_t(Arr(name,index), depth, place, _) ->
 	(
-		Printf.printf ("4\n");
 		let search_frames = deopt_lookup_function "search frames" in
 		let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
 		let parent_frame = build_load parent_frame_ptr "" builder in
@@ -358,14 +354,14 @@ and codegen_search_frames () =
 	(
 		set_value_name "fr_first_elem_addr" param_arr.(0);
 		set_value_name "depth" param_arr.(1);
-
 		let bb = append_block context "entry" f in
 		let cond_val = build_icmp Icmp.Ugt param_arr.(1) (const_int myint 0) "moretmp" builder in
 		let start_bb = insertion_block builder in
+                Printf.printf("So far so good!\n");
 		let the_function = block_parent start_bb in
 		let then_bb = append_block context "then" the_function in
 		position_at_end then_bb builder;
-		ret_flag := 0;
+                ret_flag := 0;
 		let then_val = (
 			let fr_first_pos = build_struct_gep param_arr.(0) 0 "" builder in
 			let new_fr = build_load fr_first_pos "" builder in
