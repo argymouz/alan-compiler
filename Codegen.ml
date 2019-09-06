@@ -33,6 +33,7 @@ let create_entry_block_array_alloca the_function arr_name arr_type arr_size =
 	build_array_alloca arr_type arr_size arr_name builder
 
 let rec top_codegen tree optimization = (
+        (*Printf.printf("So far so good!\n");*)
 	match tree with
 	| Program_t(program, dtyp) ->
 		declare_runtimes the_module;

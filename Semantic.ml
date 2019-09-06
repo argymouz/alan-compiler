@@ -150,7 +150,7 @@ let rec typing node =
 		| Func_def(name, par_l, ret_type, loc_def_l, comp_body) -> 
 			if name = "main" then (Program_t(typing ast1, Stmt))
 			else (
-				let newmain = Func_def("main", (Some []), Proc, loc_def_l, comp_body) in
+                                let newmain = Func_def("main", (Some []), Proc, [ast1], Compound([Func_call(name, None)])) in
 				Program_t(typing newmain, Stmt)
 			)
 		| _ -> raise (Failure "Top function is no function\n")
@@ -158,15 +158,15 @@ let rec typing node =
 	| Func_def(name, par_l, ret_type, loc_def_l, comp_body) ->
 	(
 		(
-			if (Stack.is_empty (name_stack)) then (ignore(Stack.push name name_stack);)
+                        if (Stack.is_empty (name_stack)) then (Printf.printf "Now we define function %s!\n" name; ignore(Stack.push name name_stack);)
 			else
 			(
 				let prev_top = Stack.top name_stack in
                                 let curr_top = String.concat "_" [prev_top; name] in
 				ignore(Stack.push curr_top name_stack);
+                                Printf.printf "Now we define function %s!\n" curr_top;
 			)
 		);
-                Printf.printf "%s\n" (Stack.top name_stack);
 		let place = place_ptr name in (
 			Stack.push place place_stack;
 			let p = newFunction (id_make name) true in
@@ -191,7 +191,7 @@ let rec typing node =
 				| Data_type(Int) -> Return(Some (Const(Int(0))))
 				| Data_type(Byte) -> Return(Some (Const(Char(0))))
 				| Proc -> Return(None)
-				| _ -> raise (Failure "Inavlid ret type\n")
+				| _ -> raise (Failure "Invalid ret type\n")
 			)
 			in
 			let comp_body_with_extra_ret = (
@@ -296,8 +296,9 @@ let rec typing node =
 			| ENTRY_function(fn) ->
 				begin
 					let name_lst = String.split_on_char '_' (Stack.top name_stack) in
-					let llvm_name_lst = create_llvm_name_lst name_lst (func.entry_scope.sco_nesting - 1) [] in
+					let llvm_name_lst = create_llvm_name_lst name_lst (func.entry_scope.sco_nesting) [] in
 					let llvm_name = String.concat "_" (llvm_name_lst@[name]) in
+                                        Printf.printf "Now we call function %s!\n" llvm_name;
 					let arg_l_t = do_all_opt(typing, arg_l) in
 
 					check_types_l_opt_ref(arg_l_t, fn.function_paramlist);
@@ -531,7 +532,6 @@ let rec typing node =
 
 and create_llvm_name_lst name_lst depth out_lst =
 	match depth with
-        | (-1) -> [] (* this is in case main or some library function is involved where nesting level is 0 so subtracting 1 gives -1 (see above) *)
 	| 0 -> List.rev out_lst
 	| _ ->
 	(
@@ -635,5 +635,5 @@ and check_types_l_ref(real_par_l, typ_par_l) =
 		else error "Impossible cant be neither"
 		| _ -> error "Impossible, typ param is not param"
 	)
-	| _ -> Printf.printf "test\n"; error "Amount of typ and real params is not equal"
+	| _ -> error "Amount of typ and real params is not equal"
 )
