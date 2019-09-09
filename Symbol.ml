@@ -209,7 +209,6 @@ let newParameter id typ mode f err place =
           } in
           let e = newEntry id (ENTRY_parameter inf_p) err place in
           inf.function_paramlist <- e :: inf.function_paramlist;
-          Printf.printf "%d\n" (List.length inf.function_paramlist);
           e
       | PARDEF_CHECK -> begin
           match inf.function_redeflist with

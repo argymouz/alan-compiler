@@ -9,56 +9,56 @@ let name_stack = Stack.create ()
 
 let place_stack = Stack.create ()
 
-let register_functions() =
+let register_functions() = (* parameter places are useless for these functions, since none of them perform calls to other functions *)
 	
 	let p = newFunction (id_make "extend") true in
 	openScope TYPE_int p;
-	let p1 = newParameter (id_make "b") TYPE_byte PASS_BY_VALUE p true in
+	let p1=newParameter (id_make "b") TYPE_byte PASS_BY_VALUE p true 0 in
 	endFunctionHeader p TYPE_int;
 	ignore p1;
 	closeScope();		
 	
 	let p = newFunction (id_make "shrink") true in
 	openScope TYPE_byte  p;
-	let p1 = newParameter (id_make "i") TYPE_int PASS_BY_VALUE p true in
+	let p1=newParameter (id_make "i") TYPE_int PASS_BY_VALUE p true 0 in
 	endFunctionHeader p TYPE_byte;
 	ignore p1;	
 	closeScope();	
 	
 	let p = newFunction (id_make "strlen") true in
 	openScope TYPE_int p;
-	let p1 = newParameter (id_make "s") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
+	let p1=newParameter (id_make "s") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 0 in
 	endFunctionHeader p TYPE_int;
 	ignore p1;		
 	closeScope();
 
 	let p = newFunction (id_make "strcmp") true in
 	openScope TYPE_int p;
-	let p1 = newParameter (id_make "s1") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
-	let p2 = newParameter (id_make "s2") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
+	let p1=newParameter (id_make "s1") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 0 in
+	let p2=newParameter (id_make "s2") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 1 in
 	endFunctionHeader p TYPE_int;
 	ignore p1; ignore p2;		
 	closeScope();
 	
 	let p = newFunction (id_make "strcpy") true in
 	openScope TYPE_proc p;
-	let p1 = newParameter (id_make "trg") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
-	let p2 = newParameter (id_make "src") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
+	let p1=newParameter (id_make "trg") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 0 in
+	let p2=newParameter (id_make "src") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 1 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1; ignore p2;		
 	closeScope();
 
 	let p = newFunction (id_make "strcat") true in
 	openScope TYPE_proc p;
-	let p1 = newParameter (id_make "trg") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
-	let p2 = newParameter (id_make "src") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
+	let p1=newParameter (id_make "trg") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 0 in
+	let p2=newParameter (id_make "src") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 1 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1; ignore p2;		
 	closeScope();
 
 	let p = newFunction (id_make "writeInteger") true in
 	openScope TYPE_proc p;
-	let p1 = newParameter (id_make "n") TYPE_int PASS_BY_VALUE p true in
+	let p1=newParameter (id_make "n") TYPE_int PASS_BY_VALUE p true 0 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1;
 	closeScope();		
@@ -70,7 +70,7 @@ let register_functions() =
 
 	let p = newFunction (id_make "writeByte") true in
 	openScope TYPE_proc p;
-	let p1 = newParameter (id_make "n") TYPE_byte PASS_BY_VALUE p true in
+	let p1=newParameter (id_make "n") TYPE_byte PASS_BY_VALUE p true 0 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1;
 	closeScope();		
@@ -82,7 +82,7 @@ let register_functions() =
 
 	let p = newFunction (id_make "writeChar") true in
 	openScope TYPE_proc p;
-	let p1 = newParameter (id_make "n") TYPE_byte PASS_BY_VALUE p true in
+	let p1=newParameter (id_make "n") TYPE_byte PASS_BY_VALUE p true 0 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1;
 	closeScope();		
@@ -94,15 +94,15 @@ let register_functions() =
 
 	let p = newFunction (id_make "writeString") true in
 	openScope TYPE_proc p;
-	let p1 = newParameter (id_make "s") (TYPE_array(TYPE_byte, 0)) PASS_BY_REFERENCE p true in
+	let p1=newParameter (id_make "s") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 0 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1;	
 	closeScope();	
 
 	let p = newFunction (id_make "readString") true in
 	openScope TYPE_proc p;
-	let p1 = newParameter (id_make "n") TYPE_int PASS_BY_VALUE p true in
-	let p2 = newParameter (id_make "s") (TYPE_array(TYPE_int, 0)) PASS_BY_REFERENCE p true in
+	let p1=newParameter (id_make "n") TYPE_int PASS_BY_VALUE p true 0 in
+	let p2=newParameter (id_make "s") (TYPE_array(TYPE_int,0)) PASS_BY_REFERENCE p true 1 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1; ignore p2;
 	closeScope();	
@@ -148,23 +148,28 @@ let rec typing node =
 		register_functions();
 		match ast1 with
 		| Func_def(name, par_l, ret_type, loc_def_l, comp_body) -> 
-			if name = "main" then (Program_t(typing ast1, Stmt))
+			if name = "main" then (
+                                let x = Program_t(typing ast1, Stmt) in
+                                Printf.printf "So far so good!\n";
+                                x
+                        )
 			else (
                                 let newmain = Func_def("main", (Some []), Proc, [ast1], Compound([Func_call(name, None)])) in
-				Program_t(typing newmain, Stmt)
-			)
+                                let x = Program_t(typing newmain, Stmt) in
+                                Printf.printf "So far so good!\n";
+                                x
+                       )
 		| _ -> raise (Failure "Top function is no function\n")
 	)
 	| Func_def(name, par_l, ret_type, loc_def_l, comp_body) ->
 	(
 		(
-                        if (Stack.is_empty (name_stack)) then (Printf.printf "Now we define function %s!\n" name; ignore(Stack.push name name_stack);)
+                        if (Stack.is_empty (name_stack)) then ignore(Stack.push name name_stack)
 			else
 			(
 				let prev_top = Stack.top name_stack in
                                 let curr_top = String.concat "_" [prev_top; name] in
 				ignore(Stack.push curr_top name_stack);
-                                Printf.printf "Now we define function %s!\n" curr_top;
 			)
 		);
 		let place = place_ptr name in (
@@ -298,7 +303,6 @@ let rec typing node =
 					let name_lst = String.split_on_char '_' (Stack.top name_stack) in
 					let llvm_name_lst = create_llvm_name_lst name_lst (func.entry_scope.sco_nesting) [] in
 					let llvm_name = String.concat "_" (llvm_name_lst@[name]) in
-                                        Printf.printf "Now we call function %s!\n" llvm_name;
 					let arg_l_t = do_all_opt(typing, arg_l) in
 
 					check_types_l_opt_ref(arg_l_t, fn.function_paramlist);

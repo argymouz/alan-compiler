@@ -33,7 +33,6 @@ let create_entry_block_array_alloca the_function arr_name arr_type arr_size =
 	build_array_alloca arr_type arr_size arr_name builder
 
 let rec top_codegen tree optimization = (
-        (*Printf.printf("So far so good!\n");*)
 	match tree with
 	| Program_t(program, dtyp) ->
 		declare_runtimes the_module;
@@ -53,7 +52,7 @@ let rec top_codegen tree optimization = (
 
 		ignore(PassManager.initialize the_fpm);
 		ignore(codegen_search_frames ());
-		let prog = codegen program in
+               	let prog = codegen program in
 		the_module
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n")
 )
@@ -96,6 +95,8 @@ and codegen tree = (
 				(
 					init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
 					ignore(List.map codegen_loc_fun loc_def_l); (* generate all locally defined functions *)
+                                        
+                                        position_at_end bb builder;
 					ignore(codegen_body comp_body fr); (* codegen the body *)
 					ignore(Stack.pop type_stack);
 					Llvm_analysis.assert_valid_function f;
@@ -349,16 +350,16 @@ and codegen_loc_fun node =
 	| _ -> ()
 
 and codegen_search_frames () =
-	let ft = function_type (myint) [| myint; myint |] in
+        let ft = function_type (i64_type context) [| i64_type context; myint |] in
 	let f = declare_function "search_frames" ft the_module in
-	let param_arr = params f in
+                const_null myint
+        (*let param_arr = params f in
 	(
 		set_value_name "fr_first_elem_addr" param_arr.(0);
 		set_value_name "depth" param_arr.(1);
 		let bb = append_block context "entry" f in
 		let cond_val = build_icmp Icmp.Ugt param_arr.(1) (const_int myint 0) "moretmp" builder in
-		let start_bb = insertion_block builder in
-                Printf.printf("So far so good!\n");
+		let start_bb = insertion_block builder in (* this statement is problematic *)
 		let the_function = block_parent start_bb in
 		let then_bb = append_block context "then" the_function in
 		position_at_end then_bb builder;
@@ -401,7 +402,7 @@ and codegen_search_frames () =
 		ret_flag := 0;
 		position_at_end merge_bb builder;
 		const_null myint
-	)
+	)*)
 
 and add_frame_ptr_name name arr =
         match name with
@@ -509,7 +510,6 @@ and extract_param_type a =
 	| _ -> raise (Failure "Improper extract_param_type usage")
 
 (* this function operates on lists *)
-(* problematic *)
 and extract_loc_var_def_type lst type_lst = 
 	match lst with
         | [] -> List.rev type_lst
