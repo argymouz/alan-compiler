@@ -31,8 +31,14 @@ declare void @strcat(i8*, i8*)
 
 declare i64 @search_frames(i64, i16)
 
-define void @main() {
+define i16 @main() {
 entry:
-  %main.fr = alloca {}
-  ret void
+  %main.fr = alloca { [16 x i16], i8 }
+  br i1 true, label %then, label %ifcont
+
+then:                                             ; preds = %entry
+  ret i16 0
+
+ifcont:                                           ; preds = %entry
+  ret i16 1
 }

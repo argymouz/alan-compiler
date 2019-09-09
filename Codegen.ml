@@ -14,6 +14,7 @@ let the_module = create_module context "alan"
 let the_fpm = PassManager.create_function the_module
 let builder = builder context
 
+let mybit = integer_type context 1
 let mybyte = integer_type context 8
 let myint = integer_type context 16
 let mybyteref = pointer_type mybyte
@@ -89,7 +90,6 @@ and codegen tree = (
 						ignore(Stack.push curr_top type_stack);
                 			)
 				);
-				(*let llvm_fr_str = build_global_string frame_type_str "" builder in*)
 				let bb = append_block context "entry" f in (* now create a basic block *)
                                 let fr = create_entry_block_alloca f (String.concat "." [name; "fr"]) frame_type in (* allocate the stack frame *)
 				(
@@ -256,8 +256,8 @@ and codegen_body body fr =
 		match t with
 		| Int(value) -> const_int myint value
 		| Char(value) -> const_int mybyte value
-		| True -> const_int mybyte 1
-		| False -> const_int mybyte 0)
+		| True -> const_int mybit 1
+		| False -> const_int mybit 0)
 	| Lvalue_t(first, depth, place, dtyp) -> (
 		match first with
 		| Variable(name) ->

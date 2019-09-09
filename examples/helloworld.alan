@@ -1,5 +1,11 @@
 -- This is a comment
-hello () : proc
+main () : int
+  A : int [16];
+  x : byte;
 {
-   writeString("Hello world!\n");
+--   writeString("Hello world!\n");
+  if (true) {
+    return 0; -- writeString("Hello world!\n");
+  }
+  return 1;
 }
