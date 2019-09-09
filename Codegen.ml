@@ -329,7 +329,7 @@ and opt_list_to_array_ll lst =
 		let tmplista = List.map (Array.make 1) lista in
 		Array.concat tmplista
 	)
-
+(* potentially problematic *)
 and codegen_call callee fr i arg = 
 	let typ_param = type_of((params callee).(i + 1)) in
 	let str_param = string_of_lltype(typ_param) in
@@ -349,22 +349,23 @@ and codegen_loc_fun node =
 	)
 	| _ -> ()
 
+(* problematic, see below for details *)
 and codegen_search_frames () =
         let ft = function_type (i64_type context) [| i64_type context; myint |] in
 	let f = declare_function "search_frames" ft the_module in
-                const_null myint
-        (*let param_arr = params f in
+        let param_arr = params f in
 	(
 		set_value_name "fr_first_elem_addr" param_arr.(0);
 		set_value_name "depth" param_arr.(1);
-		let bb = append_block context "entry" f in
+                let bb = append_block context "entry" f in
+                position_at_end bb builder;
 		let cond_val = build_icmp Icmp.Ugt param_arr.(1) (const_int myint 0) "moretmp" builder in
-		let start_bb = insertion_block builder in (* this statement is problematic *)
+		let start_bb = insertion_block builder in
 		let the_function = block_parent start_bb in
 		let then_bb = append_block context "then" the_function in
-		position_at_end then_bb builder;
+                position_at_end then_bb builder;
                 ret_flag := 0;
-		let then_val = (
+		let then_val = ( (* this code performs recursive calls, it is problematic as fuck *)
 			let fr_first_pos = build_struct_gep param_arr.(0) 0 "" builder in
 			let new_fr = build_load fr_first_pos "" builder in
 			let new_depth = build_sub param_arr.(1) (const_int myint 1) "" builder in
@@ -402,7 +403,7 @@ and codegen_search_frames () =
 		ret_flag := 0;
 		position_at_end merge_bb builder;
 		const_null myint
-	)*)
+	)
 
 and add_frame_ptr_name name arr =
         match name with
@@ -415,7 +416,7 @@ and add_frame_ptr_typ name arr =
 	| _ -> Array.append [| i64_type context |] arr
 
 (* the part of the frame that has to be initialized is the one corresponding to the parameters, not the local variables and the functions *)
-
+(* this function is potentially problematic *)
 and init_fr fr param_arr idx n =
 	match idx with
 	| n -> () (* stop when you cover all parameters *)

@@ -1,11 +1,7 @@
 -- This is a comment
-main () : int
-  A : int [16];
+main (i : int, j : byte) : proc
   x : byte;
+  A : int [32];
 {
 --   writeString("Hello world!\n");
-  if (true) {
-    return 0; -- writeString("Hello world!\n");
-  }
-  return 1;
 }

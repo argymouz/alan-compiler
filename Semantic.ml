@@ -150,13 +150,13 @@ let rec typing node =
 		| Func_def(name, par_l, ret_type, loc_def_l, comp_body) -> 
 			if name = "main" then (
                                 let x = Program_t(typing ast1, Stmt) in
-                                Printf.printf "So far so good!\n";
+                                (*Printf.printf "So far so good!\n";*)
                                 x
                         )
 			else (
                                 let newmain = Func_def("main", (Some []), Proc, [ast1], Compound([Func_call(name, None)])) in
                                 let x = Program_t(typing newmain, Stmt) in
-                                Printf.printf "So far so good!\n";
+                                (*Printf.printf "So far so good!\n";*)
                                 x
                        )
 		| _ -> raise (Failure "Top function is no function\n")
