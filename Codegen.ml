@@ -45,7 +45,7 @@ let rec top_codegen tree optimization = (
 
 		(
 			if optimization = "yes" then
-                		(
+                        (
 				add_memory_to_register_promotion the_fpm;
 				add_instruction_combination the_fpm;
 				add_reassociation the_fpm;
@@ -54,8 +54,7 @@ let rec top_codegen tree optimization = (
 			)
 			else ()
 		);
-                ignore(codegen_search_frames ());
-               	let prog = codegen program in
+               	(*let prog = codegen program in*)
                 (*Llvm_analysis.assert_valid_module the_module;*)
 		the_module
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n"))
@@ -128,8 +127,7 @@ and codegen_body body fr =
                         )
                         else
                         (
-		                let search_frames = deopt_lookup_function "search_frames" in
-		                let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
+                                let parent_frame_ptr = codegen_frame_search fr depth in
 		                build_call callee (Array.append [| parent_frame_ptr |] args) "" builder
                         )
                 )
@@ -267,17 +265,13 @@ and codegen_body body fr =
 		match first with
 		| Variable(name) ->
 		(
-        		let search_frames = deopt_lookup_function "search_frames" in
-			let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
-			let parent_frame = build_load parent_frame_ptr "" builder in
+                        let parent_frame = codegen_frame_search fr depth in
                         let v = build_in_bounds_gep parent_frame [| const_int myint place |] "" builder in
 			build_load v "loadtmp" builder
 		)
 		| Arr(name, index) ->
 		(
-			let search_frames = deopt_lookup_function "search_frames" in
-			let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
-			let parent_frame = build_load parent_frame_ptr "" builder in
+                        let parent_frame = codegen_frame_search fr depth in
 			let v = build_struct_gep parent_frame place "" builder in
 			let index = codegen_body index fr in
 			let addr = build_in_bounds_gep v [| index |] "arrtmp" builder in
@@ -285,9 +279,9 @@ and codegen_body body fr =
 		)
 		| Literal(charlist) ->
 			let string_of_chars chars = (
-				let buf = Buffer.create (List.length chars) in (
-					List.iter (Buffer.add_char buf) chars;
-                       			Buffer.contents buf
+		        let buf = Buffer.create (List.length chars) in (
+				List.iter (Buffer.add_char buf) chars;
+                       		Buffer.contents buf
                         )) in
 			let charlist1 = List.map char_of_int charlist in
 			let str = string_of_chars charlist1 in
@@ -301,16 +295,12 @@ and codegen_ref node fr =
 	match node with
         | Lvalue_t(Variable(name), depth, place, _) ->
 	(
-	(*	let search_frames = deopt_lookup_function "search_frames" in
-		let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
-		let parent_frame = build_load parent_frame_ptr "" builder in
-*)              build_in_bounds_gep fr (*parent_frame*) [| const_int myint place |] "" builder
+                let parent_frame = codegen_frame_search fr depth in
+                build_in_bounds_gep parent_frame [| const_int myint place |] "" builder
 	)
         | Lvalue_t(Arr(name,index), depth, place, _) ->
 	(
-		let search_frames = deopt_lookup_function "search frames" in
-		let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
-		let parent_frame = build_load parent_frame_ptr "" builder in
+                let parent_frame = codegen_frame_search fr depth in
 		let v = build_struct_gep parent_frame place "" builder in
 		let index = codegen_body index fr in
 		build_in_bounds_gep v [| index |] "arrtmp" builder
@@ -368,42 +358,14 @@ and codegen_loc_fun node =
 	)
 	| _ -> ()
 
-(* problematic, see below for details *)
-and codegen_search_frames () =
-        let ft = function_type ( myintref (*pointer_type(Stack.top type_stack)*)) [| myintref (*pointer_type(Stack.top type_stack)*); myint |] in
-	let f = declare_function "search_frames" ft the_module in
-        let param_arr = params f in
-	(
-		set_value_name "fr_addr" param_arr.(0);
-		set_value_name "depth" param_arr.(1);
-                let bb = append_block context "entry" f in
-                position_at_end bb builder;
-                let cond_val = build_icmp Icmp.Ugt param_arr.(1) (const_int myint 0) "moretmp" builder in
-		let start_bb = insertion_block builder in
-		let the_function = block_parent start_bb in
-                let then_bb = append_block context "then" the_function in
-                position_at_end then_bb builder;
-		let then_val = ( (* this code performs recursive calls, it is problematic as fuck *)
-			let new_depth = build_sub param_arr.(1) (const_int myint 1) "new_depth" builder in
-                        let fr_first_pos = build_in_bounds_gep param_arr.(0) [| const_int myint 0 |] "fr_first_pos" builder in
-			let new_fr = build_load fr_first_pos "new_fr" builder in
-                        let res = build_call f [| new_fr; new_depth |] "rec_call" builder in
-                        build_ret res builder
-		) in
-		let new_then_bb = insertion_block builder in
-
-		let else_bb = append_block context "else" the_function in
-		position_at_end else_bb builder;
-		let else_val = (
-                        ignore(build_ret param_arr.(0) builder);
-		) in
-		let new_else_bb = insertion_block builder in
-		position_at_end start_bb builder;
-		ignore (build_cond_br cond_val then_bb else_bb builder);
-		position_at_end new_then_bb builder;
-
-		position_at_end new_else_bb builder;
-		const_null myint
+and codegen_frame_search fr depth =
+        match depth with
+        | 0 -> fr
+        | _ ->
+        (
+                let fr_first_pos = build_in_bounds_gep fr [| const_int myint 0 |] "" builder in
+                let new_fr = build_load fr_first_pos "" builder in
+                codegen_frame_search new_fr (depth - 1)
         )
 
 and add_frame_ptr_name name arr =
@@ -573,14 +535,7 @@ and search_lst lst x =
                 else (search_lst t x)
         )
 
-(* this function is useless and will probably be deleted soon *)
-(*and deopt_l a =
-	match a with
-	| None -> []
-	| Some a -> a*)
-
 and deopt_lookup_function name =
-        Printf.printf "%s\n" name;
         match lookup_function name the_module with
 	| Some callee -> callee
 	| None -> raise(Failure "Shouldn't happen. Already checked")

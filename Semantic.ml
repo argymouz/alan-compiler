@@ -9,6 +9,8 @@ let name_stack = Stack.create ()
 
 let place_stack = Stack.create ()
 
+let depth_ptr = ref 0
+
 let register_functions() = (* parameter places are useless for these functions, since none of them perform calls to other functions *)
 	
 	let p = newFunction (id_make "extend") true in
@@ -150,13 +152,11 @@ let rec typing node =
 		| Func_def(name, par_l, ret_type, loc_def_l, comp_body) -> 
 			if name = "main" then (
                                 let x = Program_t(typing ast1, Stmt) in
-                                (*Printf.printf "So far so good!\n";*)
                                 x
                         )
 			else (
                                 let newmain = Func_def("main", (Some []), Proc, [ast1], Compound([Func_call(name, None)])) in
                                 let x = Program_t(typing newmain, Stmt) in
-                                (*Printf.printf "So far so good!\n";*)
                                 x
                        )
 		| _ -> raise (Failure "Top function is no function\n")
@@ -306,13 +306,16 @@ let rec typing node =
 					let arg_l_t = do_all_opt(typing, arg_l) in
 
 					check_types_l_opt_ref(arg_l_t, fn.function_paramlist);
-					let ret = fn.function_result in
-					let depth = (!currentScope).sco_nesting - func.entry_scope.sco_nesting + 1 in
-					match ret with
-					| TYPE_int -> Func_call_t(llvm_name, depth, arg_l_t, Int)
-					| TYPE_byte -> Func_call_t(llvm_name, depth, arg_l_t, Byte)
-					| TYPE_proc -> Func_call_t(llvm_name, depth, arg_l_t, Stmt)
-					| _ -> error "Invalid return type"; Empty_t
+
+					let ret = fn.function_result in (
+                                                (if ((!currentScope).sco_nesting - 1 < func.entry_scope.sco_nesting) then (ignore(depth_ptr := 0);)
+                                                else (ignore(depth_ptr := (!currentScope).sco_nesting - func.entry_scope.sco_nesting);));
+					        match ret with
+					        | TYPE_int -> Func_call_t(llvm_name, !depth_ptr, arg_l_t, Int)
+					        | TYPE_byte -> Func_call_t(llvm_name, !depth_ptr, arg_l_t, Byte)
+					        | TYPE_proc -> Func_call_t(llvm_name, !depth_ptr, arg_l_t, Stmt)
+					        | _ -> error "Invalid return type"; Empty_t
+                                        )
 				end
 			| _ -> error "Something else used as func"; Empty_t
 		end

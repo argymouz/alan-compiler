@@ -1,7 +1,5 @@
 -- This is a comment
-hello () : proc
-  x : int;
+main () : proc
 {
---  x = 1;
-  writeString("Hello world!\n");
+ -- writeString("Hello world!\n");
 }
