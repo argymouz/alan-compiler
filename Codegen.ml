@@ -51,12 +51,12 @@ let rec top_codegen tree optimization = (
 			else ()
 		);
 
-		ignore(PassManager.initialize the_fpm);
-		ignore(codegen_search_frames ());
+                ignore(codegen_search_frames ());
                	let prog = codegen program in
+                (*Llvm_analysis.assert_valid_module the_module;*)
 		the_module
-	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n")
-)
+	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n"))
+
 	
 and codegen tree = (
 	match tree with
@@ -95,7 +95,7 @@ and codegen tree = (
 				(
 					init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
 					ignore(List.map codegen_loc_fun loc_def_l); (* generate all locally defined functions *)
-                                        
+
                                         position_at_end bb builder;
 					ignore(codegen_body comp_body fr); (* codegen the body *)
 					ignore(Stack.pop type_stack);
@@ -174,19 +174,19 @@ and codegen_body body fr =
 		position_at_end new_then_bb builder;
 
 		(*NOT ALWAYS NECESSARY*)
-		(
-			if (tmp1 = 0) then (ignore(build_br merge_bb builder);)
-			else ()
-		);
+                (
+                        if (tmp1=0) then (ignore (build_br merge_bb builder);)
+                        else ()
+                );      
 		ret_flag := 0;
 		position_at_end new_else_bb builder;
 
 		(* NOT ALWAYS NECESSARY *)
-		(
-			if (tmp2 = 0) then (ignore(build_br merge_bb builder);)
-			else ()
-		);
-		ret_flag := 0;
+                (
+                        if (tmp2=0) then (ignore (build_br merge_bb builder);)
+                        else ()
+                );
+                ret_flag := 0;
 		position_at_end merge_bb builder;
 		const_null myint
         | While_t(cond, do_, dtyp) ->
@@ -351,7 +351,7 @@ and codegen_loc_fun node =
 
 (* problematic, see below for details *)
 and codegen_search_frames () =
-        let ft = function_type (i64_type context) [| i64_type context; myint |] in
+        let ft = function_type (myintref) [| myintref; myint |] in
 	let f = declare_function "search_frames" ft the_module in
         let param_arr = params f in
 	(
@@ -359,17 +359,18 @@ and codegen_search_frames () =
 		set_value_name "depth" param_arr.(1);
                 let bb = append_block context "entry" f in
                 position_at_end bb builder;
-		let cond_val = build_icmp Icmp.Ugt param_arr.(1) (const_int myint 0) "moretmp" builder in
+                let cond_val = build_icmp Icmp.Ugt param_arr.(1) (const_int myint 0) "moretmp" builder in
 		let start_bb = insertion_block builder in
 		let the_function = block_parent start_bb in
-		let then_bb = append_block context "then" the_function in
+                let then_bb = append_block context "then" the_function in
                 position_at_end then_bb builder;
                 ret_flag := 0;
 		let then_val = ( (* this code performs recursive calls, it is problematic as fuck *)
-			let fr_first_pos = build_struct_gep param_arr.(0) 0 "" builder in
-			let new_fr = build_load fr_first_pos "" builder in
-			let new_depth = build_sub param_arr.(1) (const_int myint 1) "" builder in
-			build_call f [| new_fr; new_depth |] "" builder
+			let new_depth = build_sub param_arr.(1) (const_int myint 1) "new_depth" builder in
+                        Printf.printf("So far so good!\n"); (*
+                        let fr_first_pos = build_in_bounds_gep param_arr.(0) [|const_int myint 0; const_int myint 0|] "fr_first_pos" builder in
+			let new_fr = build_load fr_first_pos "new_fr" builder in
+			build_call f [| new_fr; new_depth |] "rec_call" builder*)
 		) in
 		let tmp1 = (!ret_flag) in
 		let new_then_bb = insertion_block builder in
@@ -403,7 +404,7 @@ and codegen_search_frames () =
 		ret_flag := 0;
 		position_at_end merge_bb builder;
 		const_null myint
-	)
+        )
 
 and add_frame_ptr_name name arr =
         match name with

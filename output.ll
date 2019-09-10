@@ -29,15 +29,32 @@ declare void @strcpy(i8*, i8*)
 
 declare void @strcat(i8*, i8*)
 
-define i64 @search_frames(i64 %fr_first_elem_addr, i16 %depth) {
+define i16* @search_frames(i16* %fr_first_elem_addr, i16 %depth) {
 entry:
   %moretmp = icmp ugt i16 %depth, 0
+  br i1 %moretmp, label %then, label %else
 
-then:                                             ; No predecessors!
+then:                                             ; preds = %entry
+  %new_depth = sub i16 %depth, 1
+  br label %ifcont
+
+ifcont:                                           ; preds = %else, %then
+
+else:                                             ; preds = %entry
+  br label %ifcont
 }
 
-define void @main(i16 %i, i8 %j) {
+define i16 @main() {
 entry:
-  %main.fr = alloca { i16, i8, i8, [32 x i16] }
-  ret void
+  %main.fr = alloca {}
+  br i1 true, label %then, label %else
+
+then:                                             ; preds = %entry
+  ret i16 0
+
+ifcont:                                           ; No predecessors!
+  ret i16 2
+
+else:                                             ; preds = %entry
+  ret i16 1
 }
