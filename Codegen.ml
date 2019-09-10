@@ -1,3 +1,5 @@
+(* TODO: short-circuit frames *)
+
 open Llvm
 open Llvm_target
 open Llvm_scalar_opts
@@ -25,6 +27,8 @@ let ret_flag = ref 0
 
 let type_stack = Stack.create ()
 
+let lib_func_lst = ref []
+
 let create_entry_block_alloca the_function var_name var_type =
 	let builder = builder_at context (instr_begin (entry_block the_function)) in
 	build_alloca var_type var_name builder
@@ -50,7 +54,6 @@ let rec top_codegen tree optimization = (
 			)
 			else ()
 		);
-
                 ignore(codegen_search_frames ());
                	let prog = codegen program in
                 (*Llvm_analysis.assert_valid_module the_module;*)
@@ -92,7 +95,7 @@ and codegen tree = (
 				ignore(codegen_body comp_body fr); (* codegen the body *)
 
 				ignore(Stack.pop type_stack);
-				Llvm_analysis.assert_valid_function f;
+				(*Llvm_analysis.assert_valid_function f;*)
 				let _ = PassManager.run_function f the_fpm in
 				f
 			)
@@ -116,10 +119,20 @@ and codegen_body body fr =
 	| Func_call_t(name, depth, args_l, typ) ->
                 let callee = deopt_lookup_function name in
                 let args_array = opt_list_to_array args_l in
-		let args = Array.mapi (codegen_call callee fr) args_array in
-		let search_frames = deopt_lookup_function "search_frames" in
-		let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
-		build_call callee (Array.append [| parent_frame_ptr |] args) "" builder
+                let flag = search_lst !lib_func_lst name in
+                (
+		        let args = Array.mapi (codegen_call callee fr flag) args_array in
+                        if (flag) then
+                        (
+		                build_call callee args "" builder
+                        )
+                        else
+                        (
+		                let search_frames = deopt_lookup_function "search_frames" in
+		                let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
+		                build_call callee (Array.append [| parent_frame_ptr |] args) "" builder
+                        )
+                )
         | If_t(cond, then_, dtyp) ->
 		let cond_val = codegen_body cond fr in
 		(*should be bool*)
@@ -254,10 +267,10 @@ and codegen_body body fr =
 		match first with
 		| Variable(name) ->
 		(
-			let search_frames = deopt_lookup_function "search_frames" in
+        		let search_frames = deopt_lookup_function "search_frames" in
 			let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
 			let parent_frame = build_load parent_frame_ptr "" builder in
-			let v = build_struct_gep parent_frame place "" builder in
+                        let v = build_in_bounds_gep parent_frame [| const_int myint place |] "" builder in
 			build_load v "loadtmp" builder
 		)
 		| Arr(name, index) ->
@@ -288,10 +301,10 @@ and codegen_ref node fr =
 	match node with
         | Lvalue_t(Variable(name), depth, place, _) ->
 	(
-		let search_frames = deopt_lookup_function "search frames" in
+	(*	let search_frames = deopt_lookup_function "search_frames" in
 		let parent_frame_ptr = build_call search_frames [| fr; const_int myint depth |] "" builder in
 		let parent_frame = build_load parent_frame_ptr "" builder in
-		build_struct_gep parent_frame place "" builder
+*)              build_in_bounds_gep fr (*parent_frame*) [| const_int myint place |] "" builder
 	)
         | Lvalue_t(Arr(name,index), depth, place, _) ->
 	(
@@ -322,15 +335,29 @@ and opt_list_to_array_ll lst =
 		Array.concat tmplista
 	)
 (* potentially problematic *)
-and codegen_call callee fr i arg = 
-	let typ_param = type_of((params callee).(i + 1)) in
-	let str_param = string_of_lltype(typ_param) in
-	match str_param with
-	| "i16" -> (codegen_body arg fr)
-	| "i8" -> (codegen_body arg fr)
-	| "i16*" -> (codegen_ref arg fr)
-	| "i8*" -> (codegen_ref arg fr)
-	| _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n")
+and codegen_call callee fr flag i arg =
+        if (flag) then (
+	        let typ_param = type_of((params callee).(i)) in
+	        let str_param = string_of_lltype(typ_param) in
+	        match str_param with
+	        | "i16" -> (codegen_body arg fr)
+	        | "i8" -> (codegen_body arg fr)
+	        | "i16*" -> (codegen_ref arg fr)
+	        | "i8*" -> (codegen_ref arg fr)
+	        | _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n")
+        )
+        else
+        (
+	        let typ_param = type_of((params callee).(i + 1)) in
+	        let str_param = string_of_lltype(typ_param) in
+	        match str_param with
+	        | "i16" -> (codegen_body arg fr)
+	        | "i8" -> (codegen_body arg fr)
+	        | "i16*" -> (codegen_ref arg fr)
+	        | "i8*" -> (codegen_ref arg fr)
+	        | _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n")
+
+        )
 
 and codegen_loc_fun node =
 	match node with
@@ -359,7 +386,6 @@ and codegen_search_frames () =
 		let then_val = ( (* this code performs recursive calls, it is problematic as fuck *)
 			let new_depth = build_sub param_arr.(1) (const_int myint 1) "new_depth" builder in
                         let fr_first_pos = build_in_bounds_gep param_arr.(0) [| const_int myint 0 |] "fr_first_pos" builder in
-                        Printf.printf("So far so good!\n");
 			let new_fr = build_load fr_first_pos "new_fr" builder in
                         let res = build_call f [| new_fr; new_depth |] "rec_call" builder in
                         build_ret res builder
@@ -407,32 +433,60 @@ and init_fr fr param_arr idx n =
 and declare_runtimes the_module =
 	let ft = function_type (myvoid) [| myint |] in
 	let f = declare_function "writeInteger" ft the_module in
-	let ft = function_type (myvoid) [| mybyte |] in
+        ignore(lib_func_lst := "writeInteger"::(!lib_func_lst));
+	
+        let ft = function_type (myvoid) [| mybyte |] in
 	let f = declare_function "writeByte" ft the_module in
-	let ft = function_type (myvoid) [| mybyte |] in
+	ignore(lib_func_lst := "writeByte"::(!lib_func_lst));
+
+        let ft = function_type (myvoid) [| mybyte |] in
 	let f = declare_function "writeChar" ft the_module in
-	let ft = function_type (myvoid) [| mybyteref |] in
+	ignore(lib_func_lst := "writeChar"::(!lib_func_lst));
+
+        let ft = function_type (myvoid) [| mybyteref |] in
 	let f = declare_function "writeString" ft the_module in
-	let ft = function_type (myint) [| |] in
+	ignore(lib_func_lst := "writeString"::(!lib_func_lst));
+
+        let ft = function_type (myint) [| |] in
 	let f = declare_function "readInteger" ft the_module in
-	let ft = function_type (mybyte) [| |] in
+	ignore(lib_func_lst := "readInteger"::(!lib_func_lst));
+
+        let ft = function_type (mybyte) [| |] in
 	let f = declare_function "readByte" ft the_module in
-	let ft = function_type (mybyte) [| |] in
+	ignore(lib_func_lst := "readByte"::(!lib_func_lst));
+
+        let ft = function_type (mybyte) [| |] in
 	let f = declare_function "readChar" ft the_module in
-	let ft = function_type (myvoid) [| myint; mybyteref |] in
+        ignore(lib_func_lst := "readChar"::(!lib_func_lst));
+	
+        let ft = function_type (myvoid) [| myint; mybyteref |] in
 	let f = declare_function "readString" ft the_module in
-	let ft = function_type (myint) [| mybyte |] in
+	ignore(lib_func_lst := "readString"::(!lib_func_lst));
+
+        let ft = function_type (myint) [| mybyte |] in
 	let f = declare_function "extend" ft the_module in
-	let ft = function_type (mybyte) [| myint |] in
+	ignore(lib_func_lst := "extend"::(!lib_func_lst));
+
+        let ft = function_type (mybyte) [| myint |] in
 	let f = declare_function "shrink" ft the_module in
-	let ft = function_type (myint) [| mybyteref |] in
+	ignore(lib_func_lst := "shrink"::(!lib_func_lst));
+
+        let ft = function_type (myint) [| mybyteref |] in
 	let f = declare_function "strlen" ft the_module in
-	let ft = function_type (myint) [| mybyteref; mybyteref |] in
+	ignore(lib_func_lst := "strlen"::(!lib_func_lst));
+
+        let ft = function_type (myint) [| mybyteref; mybyteref |] in
 	let f = declare_function "strcmp" ft the_module in
-	let ft = function_type (myvoid) [| mybyteref; mybyteref |] in
+	ignore(lib_func_lst := "strcmp"::(!lib_func_lst));
+
+        let ft = function_type (myvoid) [| mybyteref; mybyteref |] in
 	let f = declare_function "strcpy" ft the_module in
-	let ft = function_type (myvoid) [| mybyteref; mybyteref |] in
+	ignore(lib_func_lst := "strcpy"::(!lib_func_lst));
+
+        let ft = function_type (myvoid) [| mybyteref; mybyteref |] in
 	let f = declare_function "strcat" ft the_module in
+        ignore(lib_func_lst := "strcat"::(!lib_func_lst));
+
 	()
 
 and ll_typ a = (
@@ -510,6 +564,15 @@ and extract_loc_var_def_type lst type_lst =
 		| _ -> raise (Failure "Improper extract_loc_var_def_type usage")
 	)
 
+and search_lst lst x =
+        match lst with
+        | [] -> false
+        | h::t ->
+        (
+                if (h = x) then (true)
+                else (search_lst t x)
+        )
+
 (* this function is useless and will probably be deleted soon *)
 (*and deopt_l a =
 	match a with
@@ -517,6 +580,7 @@ and extract_loc_var_def_type lst type_lst =
 	| Some a -> a*)
 
 and deopt_lookup_function name =
-	match lookup_function name the_module with
+        Printf.printf "%s\n" name;
+        match lookup_function name the_module with
 	| Some callee -> callee
 	| None -> raise(Failure "Shouldn't happen. Already checked")

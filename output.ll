@@ -1,6 +1,8 @@
 ; ModuleID = 'alan'
 source_filename = "alan"
 
+@strtmp = private unnamed_addr constant [14 x i8] c"Hello world!\0A\00"
+
 declare void @writeInteger(i16)
 
 declare void @writeByte(i8)
@@ -47,12 +49,15 @@ else:                                             ; preds = %entry
 
 define void @main() {
 entry:
-  %main.fr = alloca { i16 }
+  %main.fr = alloca {}
+  %0 = call i16* @search_frames({}* %main.fr, i16 1)
+  call void @main_hello(i16* %0)
   ret void
 }
 
-define void @main_test({ i16 }* %fr_ptr) {
+define void @main_hello({}* %fr_ptr) {
 entry:
-  %main_test.fr = alloca { { i16 }* }
+  %main_hello.fr = alloca { {}*, i16 }
+  call void @writeString(i8* getelementptr inbounds ([14 x i8], [14 x i8]* @strtmp, i16 0, i16 0))
   ret void
 }
