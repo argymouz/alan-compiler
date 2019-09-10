@@ -90,6 +90,7 @@ and codegen tree = (
 
                                 position_at_end bb builder;
 				ignore(codegen_body comp_body fr); (* codegen the body *)
+
 				ignore(Stack.pop type_stack);
 				Llvm_analysis.assert_valid_function f;
 				let _ = PassManager.run_function f the_fpm in
@@ -342,11 +343,11 @@ and codegen_loc_fun node =
 
 (* problematic, see below for details *)
 and codegen_search_frames () =
-        let ft = function_type (myintref) [| myintref; myint |] in
+        let ft = function_type ( myintref (*pointer_type(Stack.top type_stack)*)) [| myintref (*pointer_type(Stack.top type_stack)*); myint |] in
 	let f = declare_function "search_frames" ft the_module in
         let param_arr = params f in
 	(
-		set_value_name "fr_first_elem_addr" param_arr.(0);
+		set_value_name "fr_addr" param_arr.(0);
 		set_value_name "depth" param_arr.(1);
                 let bb = append_block context "entry" f in
                 position_at_end bb builder;
@@ -357,11 +358,11 @@ and codegen_search_frames () =
                 position_at_end then_bb builder;
 		let then_val = ( (* this code performs recursive calls, it is problematic as fuck *)
 			let new_depth = build_sub param_arr.(1) (const_int myint 1) "new_depth" builder in
-                        Printf.printf("So far so good!\n"); (*
-                        let fr_first_pos = build_in_bounds_gep param_arr.(0) [|const_int myint 0; const_int myint 0|] "fr_first_pos" builder in
+                        let fr_first_pos = build_in_bounds_gep param_arr.(0) [| const_int myint 0 |] "fr_first_pos" builder in
+                        Printf.printf("So far so good!\n");
 			let new_fr = build_load fr_first_pos "new_fr" builder in
                         let res = build_call f [| new_fr; new_depth |] "rec_call" builder in
-                        build_ret res builder*)
+                        build_ret res builder
 		) in
 		let new_then_bb = insertion_block builder in
 
@@ -376,7 +377,6 @@ and codegen_search_frames () =
 		position_at_end new_then_bb builder;
 
 		position_at_end new_else_bb builder;
-
 		const_null myint
         )
 
@@ -418,7 +418,7 @@ and declare_runtimes the_module =
 	let ft = function_type (mybyte) [| |] in
 	let f = declare_function "readByte" ft the_module in
 	let ft = function_type (mybyte) [| |] in
-	let f = declare_function "readhar" ft the_module in
+	let f = declare_function "readChar" ft the_module in
 	let ft = function_type (myvoid) [| myint; mybyteref |] in
 	let f = declare_function "readString" ft the_module in
 	let ft = function_type (myint) [| mybyte |] in
