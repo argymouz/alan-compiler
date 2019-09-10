@@ -80,29 +80,20 @@ and codegen tree = (
 			let type_arr = opt_list_to_array_ll type_lst in (* convert list to array *)
 			let frame_typ_arr = Array.append par_typ_arr type_arr in (* create the array with the type of the frame *)
 			let frame_type = struct_type context frame_typ_arr in (* create the frame *)
-			let frame_type_str = string_of_lltype frame_type in
+                        ignore(Stack.push frame_type type_stack);
+			
+                        let bb = append_block context "entry" f in (* now create a basic block *)
+                        let fr = create_entry_block_alloca f (String.concat "." [name; "fr"]) frame_type in (* allocate the stack frame *)
 			(
-				(
-					if (Stack.is_empty type_stack) then (ignore(Stack.push frame_type_str type_stack);)
-					else (
-						let prev_top = Stack.top type_stack in
-                                                let curr_top = String.concat "_" [frame_type_str; prev_top] in
-						ignore(Stack.push curr_top type_stack);
-                			)
-				);
-				let bb = append_block context "entry" f in (* now create a basic block *)
-                                let fr = create_entry_block_alloca f (String.concat "." [name; "fr"]) frame_type in (* allocate the stack frame *)
-				(
-					init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
-					ignore(List.map codegen_loc_fun loc_def_l); (* generate all locally defined functions *)
+			        init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
+				ignore(List.map codegen_loc_fun loc_def_l); (* generate all locally defined functions *)
 
-                                        position_at_end bb builder;
-					ignore(codegen_body comp_body fr); (* codegen the body *)
-					ignore(Stack.pop type_stack);
-					Llvm_analysis.assert_valid_function f;
-					let _ = PassManager.run_function f the_fpm in
-					f
-				)
+                                position_at_end bb builder;
+				ignore(codegen_body comp_body fr); (* codegen the body *)
+				ignore(Stack.pop type_stack);
+				Llvm_analysis.assert_valid_function f;
+				let _ = PassManager.run_function f the_fpm in
+				f
 			)
 		)
 	)
@@ -364,45 +355,28 @@ and codegen_search_frames () =
 		let the_function = block_parent start_bb in
                 let then_bb = append_block context "then" the_function in
                 position_at_end then_bb builder;
-                ret_flag := 0;
 		let then_val = ( (* this code performs recursive calls, it is problematic as fuck *)
 			let new_depth = build_sub param_arr.(1) (const_int myint 1) "new_depth" builder in
                         Printf.printf("So far so good!\n"); (*
                         let fr_first_pos = build_in_bounds_gep param_arr.(0) [|const_int myint 0; const_int myint 0|] "fr_first_pos" builder in
 			let new_fr = build_load fr_first_pos "new_fr" builder in
-			build_call f [| new_fr; new_depth |] "rec_call" builder*)
+                        let res = build_call f [| new_fr; new_depth |] "rec_call" builder in
+                        build_ret res builder*)
 		) in
-		let tmp1 = (!ret_flag) in
 		let new_then_bb = insertion_block builder in
 
-		let merge_bb = append_block context "ifcont" the_function in
 		let else_bb = append_block context "else" the_function in
 		position_at_end else_bb builder;
-		ret_flag := 0;
 		let else_val = (
-			param_arr.(0)
+                        ignore(build_ret param_arr.(0) builder);
 		) in
-		let tmp2 = (!ret_flag) in
 		let new_else_bb = insertion_block builder in
 		position_at_end start_bb builder;
 		ignore (build_cond_br cond_val then_bb else_bb builder);
 		position_at_end new_then_bb builder;
 
-		(*NOT ALWAYS NECESSARY*)
-		(
-			if (tmp1 = 0) then (ignore (build_br merge_bb builder);)
-			else ()
-		);
-		ret_flag := 0;
 		position_at_end new_else_bb builder;
 
-		(*NOT ALWAYS NECESSARY*)
-		(
-			if (tmp2 = 0) then (ignore (build_br merge_bb builder);)
-			else ()
-		);
-		ret_flag := 0;
-		position_at_end merge_bb builder;
 		const_null myint
         )
 
@@ -414,7 +388,7 @@ and add_frame_ptr_name name arr =
 and add_frame_ptr_typ name arr =
 	match name with
 	| "main" -> arr
-	| _ -> Array.append [| i64_type context |] arr
+	| _ -> Array.append [| pointer_type (Stack.top type_stack) |] arr
 
 (* the part of the frame that has to be initialized is the one corresponding to the parameters, not the local variables and the functions *)
 (* this function is potentially problematic *)

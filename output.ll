@@ -36,25 +36,13 @@ entry:
 
 then:                                             ; preds = %entry
   %new_depth = sub i16 %depth, 1
-  br label %ifcont
-
-ifcont:                                           ; preds = %else, %then
 
 else:                                             ; preds = %entry
-  br label %ifcont
+  ret i16* %fr_first_elem_addr
 }
 
-define i16 @main() {
+define void @main() {
 entry:
   %main.fr = alloca {}
-  br i1 true, label %then, label %else
-
-then:                                             ; preds = %entry
-  ret i16 0
-
-ifcont:                                           ; No predecessors!
-  ret i16 2
-
-else:                                             ; preds = %entry
-  ret i16 1
+  ret void
 }
