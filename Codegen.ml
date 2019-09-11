@@ -248,10 +248,10 @@ and codegen_body body fr =
 		| Mod -> build_urem lhs_val rhs_val "modtmp" builder
 		| Eq -> build_icmp Icmp.Eq lhs_val rhs_val "eqtmp" builder
 		| Neq -> build_icmp Icmp.Ne lhs_val rhs_val "eqtmp" builder
-		| More -> build_icmp Icmp.Ugt lhs_val rhs_val "moretmp" builder
-		| Less -> build_icmp Icmp.Ult lhs_val rhs_val "lesstmp" builder
-		| Morequ -> build_icmp Icmp.Uge lhs_val rhs_val "morequtmp" builder
-		| Lessequ -> build_icmp Icmp.Ule lhs_val rhs_val "lessequtmp" builder
+		| More -> build_icmp Icmp.Sgt lhs_val rhs_val "moretmp" builder
+		| Less -> build_icmp Icmp.Slt lhs_val rhs_val "lesstmp" builder
+		| Morequ -> build_icmp Icmp.Sge lhs_val rhs_val "morequtmp" builder
+		| Lessequ -> build_icmp Icmp.Sle lhs_val rhs_val "lessequtmp" builder
 		| And -> build_and lhs_val rhs_val "andtmp" builder
 		| Or -> build_or lhs_val rhs_val "ortmp" builder
 		| _ -> raise (Failure "Binary OP problem in codegen"))

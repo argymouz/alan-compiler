@@ -1,9 +1,27 @@
--- This is a comment
+hello () : proc
+  x : int;
 
-main () : proc
-  x : int[32];
+  test () : proc
+    test1() : proc
+    {
+      x = x - 1;
+      writeString("I am in test1! Now x is: ");
+      writeInteger(x);
+      writeString("\n");
+      test();
+    }
+
+  {
+    if (x >= 0)
+    {
+      writeInteger(x);
+      writeString("\n");
+      x = x - 1;
+      test1();
+    }
+  }
+
 {
-  x[0] = 1;
-  writeInteger(x[0]);
-  writeString("\n");
+  x = readInteger();
+  test();
 }
