@@ -1,4 +1,4 @@
-(* TODO: short-circuit frames *)
+(* TODO: short-circuit logical operators *)
 
 open Llvm
 open Llvm_target
@@ -55,7 +55,7 @@ let rec top_codegen tree optimization = (
 			else ()
 		);
                	let prog = codegen program in
-                (*Llvm_analysis.assert_valid_module the_module;*)
+                Llvm_analysis.assert_valid_module the_module;
 		the_module
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n"))
 
@@ -94,7 +94,7 @@ and codegen tree = (
 				ignore(codegen_body comp_body fr); (* codegen the body *)
 
 				ignore(Stack.pop type_stack);
-				(*Llvm_analysis.assert_valid_function f;*)
+				Llvm_analysis.assert_valid_function f;
 				let _ = PassManager.run_function f the_fpm in
 				f
 			)

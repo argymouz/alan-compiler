@@ -1,6 +1,9 @@
 -- This is a comment
 
 main () : proc
+  x : int[32];
 {
-  writeString("Hello world!\n");
+  x[0] = 1;
+  writeInteger(x[0]);
+  writeString("\n");
 }

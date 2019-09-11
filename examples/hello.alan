@@ -1,13 +1,22 @@
-hello () : proc
-  x : int [32];
+main () : proc
+  x : int;
 
-  test (x : reference int []) : proc
+  test(x : reference int) : proc
   {
-    writeInteger(x[1]);
+    writeString("Printing from inside test. The value of x is: ");
+    writeInteger(x);
     writeString("\n");
+--    x = x - 1;
+--    writeString("Printing from inside test after decrease. The value of x is: ");
+--    writeInteger(x);
+--    writeString("\n");
   }
+
 {
-  x[1] = 2;
+  x = 2;
   test(x);
+--  writeString("Printing from outside test. The value of x is: ");
+--  writeInteger(x);
+--  writeString("\n");
 }
 
