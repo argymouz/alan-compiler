@@ -209,6 +209,7 @@ let rec typing node =
 			(
 				closeScope();
 				let llvm_name = Stack.pop name_stack in
+                                ignore(Stack.pop place_stack);
 				Func_def_t(llvm_name, par_l_t, ret_type, loc_def_l_t, comp_body_t, Stmt)
 			)
 		)

@@ -1,5 +1,3 @@
-(* TODO: short-circuit logical operators *)
-
 open Llvm
 open Llvm_target
 open Llvm_scalar_opts
@@ -80,7 +78,7 @@ and codegen tree = (
 			) param_arr;
 			let type_lst = extract_loc_var_def_type loc_def_l [] in (* extract the types of local variables *)
 			let type_arr = opt_list_to_array_ll type_lst in (* convert list to array *)
-			let frame_typ_arr = Array.append par_typ_arr type_arr in (* create the array with the type of the frame *)
+                        let frame_typ_arr = Array.append par_typ_arr type_arr in (* create the array with the type of the frame *)
 			let frame_type = struct_type context frame_typ_arr in (* create the frame *)
                         ignore(Stack.push frame_type type_stack);
 			
@@ -91,7 +89,7 @@ and codegen tree = (
 
                                 position_at_end bb builder;
 			        init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
-				ignore(codegen_body comp_body fr); (* codegen the body *)
+                                ignore(codegen_body comp_body fr); (* codegen the body *)
 
 				ignore(Stack.pop type_stack);
 				Llvm_analysis.assert_valid_function f;
@@ -252,8 +250,13 @@ and codegen_body body fr =
 		| Less -> build_icmp Icmp.Slt lhs_val rhs_val "lesstmp" builder
 		| Morequ -> build_icmp Icmp.Sge lhs_val rhs_val "morequtmp" builder
 		| Lessequ -> build_icmp Icmp.Sle lhs_val rhs_val "lessequtmp" builder
-		| And -> build_and lhs_val rhs_val "andtmp" builder
-		| Or -> build_or lhs_val rhs_val "ortmp" builder
+		| And -> (
+
+                        build_and lhs_val rhs_val "andtmp" builder
+                )
+		| Or -> (
+                        build_or lhs_val rhs_val "ortmp" builder
+                )
 		| _ -> raise (Failure "Binary OP problem in codegen"))
 	| Const_t(t, typ) -> (
 		match t with
@@ -521,7 +524,7 @@ and extract_loc_var_def_type lst type_lst =
                         | Byte -> extract_loc_var_def_type t ((array_type mybyte size)::type_lst)
                         | _ -> raise (Failure "Improper extract_loc_var_def_type usage")
 		)
-		| Func_def_t(_) -> extract_loc_var_def_type t type_lst
+                | Func_def_t(_) -> extract_loc_var_def_type t type_lst
 		| _ -> raise (Failure "Improper extract_loc_var_def_type usage")
 	)
 
