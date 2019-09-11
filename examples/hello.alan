@@ -1,5 +1,13 @@
 hello () : proc
+  x : int [32];
+
+  test (x : reference int []) : proc
+  {
+    writeInteger(x[1]);
+    writeString("\n");
+  }
 {
-	writeString("Hello world!\n");
+  x[1] = 2;
+  test(x);
 }
 

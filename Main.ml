@@ -1,5 +1,6 @@
 open Llvm
 open Lexing
+open Parser
 open Ast
 open Format
 open Semantic
@@ -9,9 +10,7 @@ open Symbol
 open Error
 open Codegen
 
-
 let main =
-
  let rec sizeof list = 
  match list with
  | [] -> 0
@@ -23,7 +22,7 @@ let main =
 *)
  let cin = stdin in
  let lexbuf = Lexing.from_channel cin in
-  try
+ try
     let ast = Parser.program Lexer.lexer lexbuf in
     let t_ast = typing ast in 
 	let the_module = Codegen.top_codegen t_ast Sys.argv.(1) in

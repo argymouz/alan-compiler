@@ -1,5 +1,6 @@
 -- This is a comment
+
 main () : proc
 {
- -- writeString("Hello world!\n");
+  writeString("Hello world!\n");
 }

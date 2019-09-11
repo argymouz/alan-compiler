@@ -54,7 +54,7 @@ let rec top_codegen tree optimization = (
 			)
 			else ()
 		);
-               	(*let prog = codegen program in*)
+               	let prog = codegen program in
                 (*Llvm_analysis.assert_valid_module the_module;*)
 		the_module
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n"))
@@ -87,10 +87,10 @@ and codegen tree = (
                         let bb = append_block context "entry" f in (* now create a basic block *)
                         let fr = create_entry_block_alloca f (String.concat "." [name; "fr"]) frame_type in (* allocate the stack frame *)
 			(
-			        init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
 				ignore(List.map codegen_loc_fun loc_def_l); (* generate all locally defined functions *)
 
                                 position_at_end bb builder;
+			        init_fr fr param_arr 0 (Array.length param_arr); (* initialize the frame, see the def of the function below *)
 				ignore(codegen_body comp_body fr); (* codegen the body *)
 
 				ignore(Stack.pop type_stack);
@@ -266,7 +266,7 @@ and codegen_body body fr =
 		| Variable(name) ->
 		(
                         let parent_frame = codegen_frame_search fr depth in
-                        let v = build_in_bounds_gep parent_frame [| const_int myint place |] "" builder in
+                        let v = build_struct_gep parent_frame place "" builder in
 			build_load v "loadtmp" builder
 		)
 		| Arr(name, index) ->
@@ -274,7 +274,7 @@ and codegen_body body fr =
                         let parent_frame = codegen_frame_search fr depth in
 			let v = build_struct_gep parent_frame place "" builder in
 			let index = codegen_body index fr in
-			let addr = build_in_bounds_gep v [| index |] "arrtmp" builder in
+                        let addr = build_in_bounds_gep v [| const_int myint 0; index |] "arrtmp" builder in
 			build_load addr "load_arr_elem_tmp" builder
 		)
 		| Literal(charlist) ->
@@ -296,14 +296,15 @@ and codegen_ref node fr =
         | Lvalue_t(Variable(name), depth, place, _) ->
 	(
                 let parent_frame = codegen_frame_search fr depth in
-                build_in_bounds_gep parent_frame [| const_int myint place |] "" builder
+                let x = build_struct_gep parent_frame place "" builder in
+                x
 	)
         | Lvalue_t(Arr(name,index), depth, place, _) ->
 	(
                 let parent_frame = codegen_frame_search fr depth in
-		let v = build_struct_gep parent_frame place "" builder in
+                let v = build_struct_gep parent_frame place "" builder in
 		let index = codegen_body index fr in
-		build_in_bounds_gep v [| index |] "arrtmp" builder
+                build_in_bounds_gep v [| const_int myint 0; index |] "arrtmp" builder
 	)
 	| _ -> codegen_body node fr
 
@@ -363,7 +364,7 @@ and codegen_frame_search fr depth =
         | 0 -> fr
         | _ ->
         (
-                let fr_first_pos = build_in_bounds_gep fr [| const_int myint 0 |] "" builder in
+                let fr_first_pos = build_struct_gep fr 0 "" builder in
                 let new_fr = build_load fr_first_pos "" builder in
                 codegen_frame_search new_fr (depth - 1)
         )
@@ -379,13 +380,11 @@ and add_frame_ptr_typ name arr =
 	| _ -> Array.append [| pointer_type (Stack.top type_stack) |] arr
 
 (* the part of the frame that has to be initialized is the one corresponding to the parameters, not the local variables and the functions *)
-(* this function is potentially problematic *)
 and init_fr fr param_arr idx n =
-	match idx with
-	| n -> () (* stop when you cover all parameters *)
-	| _ ->
+        if (idx = n) then () (* stop when you cover all parameters *)
+        else
 	(
-		let st_addr = build_in_bounds_gep fr [| const_int myint idx |] "" builder in (* get the element's address *)
+		let st_addr = build_struct_gep fr idx "" builder in (* get the element's address *)
 		(
 			ignore(build_store param_arr.(idx) st_addr builder); (* store the value passed by the caller there *)
 			init_fr fr param_arr (idx + 1) n (* proceed with the rest of the elements *)
