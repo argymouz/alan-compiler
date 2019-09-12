@@ -264,21 +264,36 @@ and codegen_body body fr =
 		| Char(value) -> const_int mybyte value
 		| True -> const_int mybit 1
 		| False -> const_int mybit 0)
-	| Lvalue_t(first, depth, place, dtyp) -> (
+	| Lvalue_t(first, depth, place, flag, dtyp) -> (
 		match first with
 		| Variable(name) ->
 		(
                         let parent_frame = codegen_frame_search fr depth in
                         let v = build_struct_gep parent_frame place "" builder in
-			build_load v "loadtmp" builder
+                        let x = build_load v "loadtmp" builder in
+                        (
+                                if (flag) then (build_load x "loadtmp" builder)
+                                else (x)
+                        )
 		)
 		| Arr(name, index) ->
 		(
                         let parent_frame = codegen_frame_search fr depth in
 			let v = build_struct_gep parent_frame place "" builder in
 			let index = codegen_body index fr in
-                        let addr = build_in_bounds_gep v [| const_int myint 0; index |] "arrtmp" builder in
-			build_load addr "load_arr_elem_tmp" builder
+                        match flag with
+                        | true ->
+                                (
+                                        let x = build_load v "" builder in
+                                        let addr = build_in_bounds_gep x [| index |] "arrtmp" builder in
+                                        build_load addr "load_arr_elem_tmp" builder
+                                )
+                        | false ->
+                                (
+                                        let addr = build_in_bounds_gep v [| const_int myint 0; index |] "arrtmp" builder in
+                                        build_load addr "load_arr_elem_tmp" builder
+                                )
+                        | _ -> raise (Failure "Invalid boolean")
 		)
 		| Literal(charlist) ->
 			let string_of_chars chars = (
@@ -296,19 +311,42 @@ and codegen_body body fr =
 
 and codegen_ref node fr = 
 	match node with
-        | Lvalue_t(Variable(name), depth, place, _) ->
+        | Lvalue_t(Variable(name), depth, place, flag, dtyp) ->
 	(
                 let parent_frame = codegen_frame_search fr depth in
                 let x = build_struct_gep parent_frame place "" builder in
-                x
+                (
+                        if ((dtyp = Int) || (dtyp = Byte)) then (
+                                if (flag) then (build_load x "" builder)
+                                else (x)
+                        )
+                        else (
+                                if (flag) then (
+                                        build_load x "" builder
+                                )
+                                else (
+                                        build_in_bounds_gep x [| const_int myint 0; const_int myint 0 |] "" builder
+                                )
+                        )
+                )
 	)
-        | Lvalue_t(Arr(name,index), depth, place, _) ->
+        | Lvalue_t(Arr(name,index), depth, place, flag, _) ->
 	(
                 let parent_frame = codegen_frame_search fr depth in
                 let v = build_struct_gep parent_frame place "" builder in
 		let index = codegen_body index fr in
-                build_in_bounds_gep v [| const_int myint 0; index |] "arrtmp" builder
-	)
+                match flag with
+                | true ->
+                        (
+                                let x = build_load v "" builder in
+                                build_in_bounds_gep x [| index |] "" builder
+                        )
+                | false ->
+                        (
+                                build_in_bounds_gep v [| const_int myint 0; index |] "" builder
+                        )
+                | _ -> raise (Failure "Invalid boolean")
+                	)
 	| _ -> codegen_body node fr
 
 and opt_list_to_array lst =
@@ -330,7 +368,7 @@ and opt_list_to_array_ll lst =
 	)
 (* potentially problematic *)
 and codegen_call callee fr flag i arg =
-        if (flag) then (
+        if (flag) then ( (* this case corresponds to library functions *)
 	        let typ_param = type_of((params callee).(i)) in
 	        let str_param = string_of_lltype(typ_param) in
 	        match str_param with
@@ -340,7 +378,7 @@ and codegen_call callee fr flag i arg =
 	        | "i8*" -> (codegen_ref arg fr)
 	        | _ -> raise (Failure "Illegal typical parameter. CODEGEN_CALL\n")
         )
-        else
+        else (* this corresponds to the rest *)
         (
 	        let typ_param = type_of((params callee).(i + 1)) in
 	        let str_param = string_of_lltype(typ_param) in

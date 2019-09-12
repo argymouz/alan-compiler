@@ -1,0 +1,20 @@
+main () : proc
+  test (x : reference int []) : proc
+  {
+    x[1] = readInteger();
+    writeString("Inside test I am: ");
+    writeInteger(x[1]);
+    writeString("\n");
+  }
+
+  arapis : int [32];
+{
+  arapis[1] = readInteger();
+  writeString("My initial value is: ");
+  writeInteger(arapis[1]);
+  writeString("\n");
+  test(arapis);
+  writeString("My new value is: ");
+  writeInteger(arapis[1]);
+  writeString("\n");
+}

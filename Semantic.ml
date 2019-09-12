@@ -133,7 +133,7 @@ type typed_ast =
 	| Unop_t of unop * typed_ast * node_type
 	| Binop_t of typed_ast * binop * typed_ast * node_type
 	| Const_t of const * node_type
-	| Lvalue_t of typed_lvalue * int * int * node_type
+	| Lvalue_t of typed_lvalue * int * int * bool * node_type
 	| Compound_t of typed_ast list * node_type
 	| Empty_t 
  
@@ -434,11 +434,11 @@ let rec typing node =
 		let expr2_t = typing expr2 in
 		let bi_t2 = get_type expr2_t in	
 		match(expr1_t, bi_t2) with
-		| (Lvalue_t(Variable(_), _, _, Int), Int) -> Assign_t(expr1_t, expr2_t, Stmt)
-		| (Lvalue_t(Variable(_), _, _, Byte), Byte) -> Assign_t(expr1_t, expr2_t, Stmt)
-		| (Lvalue_t(Arr(_), _, _, Byte), Byte) -> Assign_t(expr1_t, expr2_t, Stmt)
-		| (Lvalue_t(Arr(_),_,_,Int),Int) -> Assign_t(expr1_t, expr2_t, Stmt)
-		| (Lvalue_t(Literal(_), _, _, _), _) -> error "You may not assign to a string"; Empty_t
+		| (Lvalue_t(Variable(_), _, _, _, Int), Int) -> Assign_t(expr1_t, expr2_t, Stmt)
+		| (Lvalue_t(Variable(_), _, _, _, Byte), Byte) -> Assign_t(expr1_t, expr2_t, Stmt)
+		| (Lvalue_t(Arr(_), _, _, _, Byte), Byte) -> Assign_t(expr1_t, expr2_t, Stmt)
+		| (Lvalue_t(Arr(_),_,_,_,Int),Int) -> Assign_t(expr1_t, expr2_t, Stmt)
+		| (Lvalue_t(Literal(_), _, _, _, _), _) -> error "You may not assign to a string"; Empty_t
 		| _ -> error "Illegal Assign"; Empty_t
 	)
 	| Const(value) ->
@@ -462,19 +462,20 @@ let rec typing node =
 			|ENTRY_variable(varinf) ->
 			(
 				match varinf.variable_type with
-				|TYPE_int ->Lvalue_t(lvalue_t,depth,place,Int)
-				|TYPE_byte ->Lvalue_t(lvalue_t,depth,place,Byte)
-				|TYPE_array(TYPE_int,_) -> Lvalue_t(lvalue_t, depth, place, IntArr)
-				|TYPE_array(TYPE_byte,_) -> Lvalue_t(lvalue_t, depth, place, ByteArr)
+				|TYPE_int ->Lvalue_t(lvalue_t,depth,place,false,Int)
+				|TYPE_byte ->Lvalue_t(lvalue_t,depth,place,false,Byte)
+				|TYPE_array(TYPE_int,_) -> Lvalue_t(lvalue_t, depth, place, false, IntArr)
+				|TYPE_array(TYPE_byte,_) -> Lvalue_t(lvalue_t, depth, place, false, ByteArr)
 				|_ -> error "Invalid variable type"; Empty_t
 			)
 			|ENTRY_parameter(parinf) ->
 			(
-				match parinf.parameter_type with
-				|TYPE_int ->Lvalue_t(lvalue_t, depth, place, Int)
-				|TYPE_byte ->Lvalue_t(lvalue_t, depth, place, Byte)
-				|TYPE_array(TYPE_int,_) -> Lvalue_t(lvalue_t, depth, place, IntArr)
-				|TYPE_array(TYPE_byte,_) -> Lvalue_t(lvalue_t, depth, place, ByteArr)
+                                let flag = (parinf.parameter_mode = PASS_BY_REFERENCE) in
+			        match parinf.parameter_type with
+				|TYPE_int ->Lvalue_t(lvalue_t, depth, place, flag, Int)
+				|TYPE_byte ->Lvalue_t(lvalue_t, depth, place, flag, Byte)
+				|TYPE_array(TYPE_int,_) -> Lvalue_t(lvalue_t, depth, place, true, IntArr)
+				|TYPE_array(TYPE_byte,_) -> Lvalue_t(lvalue_t, depth, place, true, ByteArr)
 				|_ -> error "Invalid variable type"; Empty_t
 			)
 			| _ -> error "Undefined variable"; Empty_t
@@ -493,22 +494,22 @@ let rec typing node =
 			| ENTRY_variable(varinf) ->
 			(
 				match varinf.variable_type with
-				| TYPE_array(TYPE_int, _) -> Lvalue_t(lvalue_t, depth, place, Int)
+				| TYPE_array(TYPE_int, _) -> Lvalue_t(lvalue_t, depth, place, false, Int)
 				| TYPE_array(TYPE_byte, _) ->
 				(
 					Printf.printf "Found variable bytearr array var of name %s\n" name;	
-					Lvalue_t(lvalue_t, depth, place, Byte)
+					Lvalue_t(lvalue_t, depth, place, false, Byte)
 				)
 				| _ -> error "Invalid variable type"; Empty_t
 			)
 			| ENTRY_parameter(parinf) ->
 			(
-				match parinf.parameter_type with
-				| TYPE_array(TYPE_int,_) -> Lvalue_t(lvalue_t, depth, place, Int)
+			        match parinf.parameter_type with
+				| TYPE_array(TYPE_int,_) -> Lvalue_t(lvalue_t, depth, place, true, Int)
 				| TYPE_array(TYPE_byte,_) ->
 				(
 					Printf.printf "Found parameter bytearr array var of name %s\n" name;	
-					Lvalue_t(lvalue_t, depth, place, Byte)
+					Lvalue_t(lvalue_t, depth, place, true, Byte)
 				)
 				|_ -> error "Invalid array type"; Empty_t
 			)
@@ -516,7 +517,7 @@ let rec typing node =
 		)
 		| Literal(str) ->
 			let lvalue_t = Literal(str) in
-			Lvalue_t(lvalue_t, 0, 0, ByteArr)
+			Lvalue_t(lvalue_t, 0, 0, false, ByteArr)
 	)
 	| Compound(stmt_l) ->
 		(*check everyone has type Stmt*) 
@@ -570,7 +571,7 @@ and get_type node =
     	| Unop_t(_, _, t) -> t 
    	| Binop_t(_, _, _, t) -> t
     	| Const_t(_, t) -> t
-    	| Lvalue_t(_, _, _, t) -> t
+    	| Lvalue_t(_, _, _, _, t) -> t
     	| Compound_t(_, _) -> Stmt
     	| Empty_t -> Stmt
 
@@ -634,7 +635,7 @@ and check_types_l_ref(real_par_l, typ_par_l) =
 		else if parinf.parameter_mode = PASS_BY_REFERENCE then
 		(
 			match x with
-			| Lvalue_t(_, _, _, typ) ->
+			| Lvalue_t(_, _, _, _, typ) ->
 				if (typ = my_typ(parinf.parameter_type)) then check_types_l_ref(xr, yr)
 				else error "Typ and real param types dont match"
 

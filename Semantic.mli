@@ -25,7 +25,7 @@ type typed_ast =
     | Unop_t of unop*typed_ast*node_type
     | Binop_t of typed_ast*binop*typed_ast*node_type
     | Const_t of const*node_type
-    | Lvalue_t of typed_lvalue*int*int*node_type
+    | Lvalue_t of typed_lvalue*int*int*bool*node_type
     | Compound_t of typed_ast list*node_type
     | Empty_t
 
