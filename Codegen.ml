@@ -242,7 +242,7 @@ and codegen_body body fr =
 		| Plus -> build_add lhs_val rhs_val "addtmp" builder
 		| Minus -> build_sub lhs_val rhs_val "subtmp" builder
 		| Mul -> build_mul lhs_val rhs_val "multmp" builder
-		| Div -> build_udiv lhs_val rhs_val "divtmp" builder
+		| Div -> build_sdiv lhs_val rhs_val "divtmp" builder
 		| Mod -> build_urem lhs_val rhs_val "modtmp" builder
 		| Eq -> build_icmp Icmp.Eq lhs_val rhs_val "eqtmp" builder
 		| Neq -> build_icmp Icmp.Ne lhs_val rhs_val "eqtmp" builder
@@ -282,10 +282,9 @@ and codegen_body body fr =
 			let v = build_struct_gep parent_frame place "" builder in
 			let index = codegen_body index fr in
                         match flag with
-                        | true ->
-                                (
-                                        let x = build_load v "" builder in
-                                        let addr = build_in_bounds_gep x [| index |] "arrtmp" builder in
+                        | true -> (* if the array has been given to a function as an argument the stack frame has the address of its first element *)
+                                (       let x = build_load v "" builder in
+                                        let addr = build_in_bounds_gep x [| index |] "arrtmp" builder in (* when using gep in this context it has only one argument *)
                                         build_load addr "load_arr_elem_tmp" builder
                                 )
                         | false ->

@@ -1,0 +1,33 @@
+main () : proc
+  x : int;
+
+  f1 () : proc
+
+    f2 () : proc
+    {
+      if (x >= 0)
+      {
+        x = x - 1;
+        writeString("My value was change by f2 to: ");
+        writeInteger(x);
+        writeChar('\n');
+        f1();
+      }
+    }
+  {
+    if (x >= 0)
+    {
+      x = x - 1;
+      writeString("My value was changed by f1 to: ");
+      writeInteger(x);
+      writeChar('\n');
+      f2();
+    }
+  }
+{
+  x = readInteger();
+  writeString("My initial value is: ");
+  writeInteger(x);
+  writeChar('\n');
+  f1();
+}

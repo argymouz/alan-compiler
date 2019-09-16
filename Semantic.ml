@@ -104,7 +104,7 @@ let register_functions() = (* parameter places are useless for these functions, 
 	let p = newFunction (id_make "readString") true in
 	openScope TYPE_proc p;
 	let p1=newParameter (id_make "n") TYPE_int PASS_BY_VALUE p true 0 in
-	let p2=newParameter (id_make "s") (TYPE_array(TYPE_int,0)) PASS_BY_REFERENCE p true 1 in
+	let p2=newParameter (id_make "s") (TYPE_array(TYPE_byte,0)) PASS_BY_REFERENCE p true 1 in
 	endFunctionHeader p TYPE_proc;
 	ignore p1; ignore p2;
 	closeScope();	
@@ -155,9 +155,24 @@ let rec typing node =
                                 x
                         )
 			else (
-                                let newmain = Func_def("main", (Some []), Proc, [ast1], Compound([Func_call(name, None)])) in
-                                let x = Program_t(typing newmain, Stmt) in
-                                x
+                                match ret_type with
+                                | Proc -> 
+                                (
+                                        let newmain = Func_def("main", (Some []), Proc, [ast1], Compound([Func_call(name, None)])) in
+                                        Program_t(typing newmain, Stmt)
+                                )
+                                | Data_type(Int) ->
+                                (
+                                        let newmain = Func_def("main", (Some []), Proc, Var_def("X", Int)::[ast1], Compound([Assign(Lvalue(Variable("X")), Func_call(name, None))])) in
+                                        Program_t(typing newmain, Stmt)
+                                )
+                                | Data_type(Byte) ->
+                                (
+                                        let newmain = Func_def("main", (Some []), Proc, Var_def("X", Byte)::[ast1], Compound([Assign(Lvalue(Variable("X")), Func_call(name, None))])) in
+                                        Program_t(typing newmain, Stmt)
+                                )
+                                | _ -> raise (Failure "main has an invalid return type\n")
+
                        )
 		| _ -> raise (Failure "Top function is no function\n")
 	)
@@ -295,7 +310,7 @@ let rec typing node =
 			)
 		end;
 		Var_def_arr_t(name, d_type, size, Stmt)
-	| Func_call(name, arg_l) -> 
+	| Func_call(name, arg_l) ->
 		let func = lookupEntry(id_make name) LOOKUP_ALL_SCOPES false in
 		begin
 			match func.entry_info with
