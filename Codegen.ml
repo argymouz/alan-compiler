@@ -52,7 +52,7 @@ let rec top_codegen tree optimization = (
 			)
 			else ()
 		);
-               	let prog = codegen program in
+                ignore(codegen program);
                 Llvm_analysis.assert_valid_module the_module;
 		the_module
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n"))
@@ -137,7 +137,7 @@ and codegen_body body fr =
 		let then_bb = append_block context "then" the_function in
 		position_at_end then_bb builder;
 		ret_flag := 0;
-		let then_val = codegen_body then_ fr in
+                ignore(codegen_body then_ fr);
 		let new_then_bb = insertion_block builder in
 		let merge_bb = append_block context "ifcont" the_function in
 		position_at_end start_bb builder;
@@ -159,7 +159,7 @@ and codegen_body body fr =
 		let then_bb = append_block context "then" the_function in
 		position_at_end then_bb builder;
 		ret_flag := 0;
-		let then_val = codegen_body then_ fr in
+                ignore(codegen_body then_ fr);
 		let tmp1 = (!ret_flag) in
 		let new_then_bb = insertion_block builder in
 
@@ -167,7 +167,7 @@ and codegen_body body fr =
 		let else_bb = append_block context "else" the_function in
 		position_at_end else_bb builder;
 		ret_flag := 0;
-		let else_val = codegen_body else_ fr in
+                ignore(codegen_body else_ fr);
 		let tmp2 = (!ret_flag) in
 		let new_else_bb = insertion_block builder in
 		position_at_end start_bb builder;
@@ -201,7 +201,7 @@ and codegen_body body fr =
 		let do_bb = append_block context "do" the_function in
 		position_at_end do_bb builder;
 		ret_flag := 0;
-		let do_val = codegen_body do_ fr in
+                ignore(codegen_body do_ fr);
 		let new_do_bb = insertion_block builder in
 		position_at_end start_bb builder;
 		ignore (build_br cond_bb builder);
@@ -256,15 +256,15 @@ and codegen_body body fr =
                 )
 		| Or -> (
                         build_or lhs_val rhs_val "ortmp" builder
-                )
-		| _ -> raise (Failure "Binary OP problem in codegen"))
+                ))
 	| Const_t(t, typ) -> (
 		match t with
 		| Int(value) -> const_int myint value
 		| Char(value) -> const_int mybyte value
 		| True -> const_int mybit 1
 		| False -> const_int mybit 0)
-	| Lvalue_t(first, depth, place, flag, dtyp) -> (
+	| Lvalue_t(first, depth, place, flag, dtyp) ->
+        (
 		match first with
 		| Variable(name) ->
 		(
@@ -283,16 +283,16 @@ and codegen_body body fr =
 			let index = codegen_body index fr in
                         match flag with
                         | true -> (* if the array has been given to a function as an argument the stack frame has the address of its first element *)
-                                (       let x = build_load v "" builder in
-                                        let addr = build_in_bounds_gep x [| index |] "arrtmp" builder in (* when using gep in this context it has only one argument *)
-                                        build_load addr "load_arr_elem_tmp" builder
-                                )
+                        (
+                                let x = build_load v "" builder in
+                                let addr = build_in_bounds_gep x [| index |] "arrtmp" builder in (* when using gep in this context it has only one argument *)
+                                build_load addr "load_arr_elem_tmp" builder
+                        )
                         | false ->
-                                (
-                                        let addr = build_in_bounds_gep v [| const_int myint 0; index |] "arrtmp" builder in
-                                        build_load addr "load_arr_elem_tmp" builder
-                                )
-                        | _ -> raise (Failure "Invalid boolean")
+                        (
+                                let addr = build_in_bounds_gep v [| const_int myint 0; index |] "arrtmp" builder in
+                                build_load addr "load_arr_elem_tmp" builder
+                        )
 		)
 		| Literal(charlist) ->
 			let string_of_chars chars = (
@@ -304,7 +304,7 @@ and codegen_body body fr =
 			let str = string_of_chars charlist1 in
 			let p = build_global_string str "strtmp" builder in
 			build_in_bounds_gep p [| const_int myint 0; const_int myint 0 |] "arr_strtmp" builder
-		| _ -> raise (Failure "Unimplemented"))
+        )
 	| Empty_t -> const_null myint
 	| _ -> raise (Failure "CODEGEN CALLED FOR PARAM")
 
@@ -336,16 +336,15 @@ and codegen_ref node fr =
 		let index = codegen_body index fr in
                 match flag with
                 | true ->
-                        (
-                                let x = build_load v "" builder in
-                                build_in_bounds_gep x [| index |] "" builder
-                        )
+                (
+                        let x = build_load v "" builder in
+                        build_in_bounds_gep x [| index |] "" builder
+                )
                 | false ->
-                        (
-                                build_in_bounds_gep v [| const_int myint 0; index |] "" builder
-                        )
-                | _ -> raise (Failure "Invalid boolean")
-                	)
+                (
+                        build_in_bounds_gep v [| const_int myint 0; index |] "" builder
+                )
+        )
 	| _ -> codegen_body node fr
 
 and opt_list_to_array lst =
@@ -365,7 +364,7 @@ and opt_list_to_array_ll lst =
 		let tmplista = List.map (Array.make 1) lista in
 		Array.concat tmplista
 	)
-(* potentially problematic *)
+
 and codegen_call callee fr flag i arg =
         if (flag) then ( (* this case corresponds to library functions *)
 	        let typ_param = type_of((params callee).(i)) in
@@ -433,59 +432,59 @@ and init_fr fr param_arr idx n =
 
 and declare_runtimes the_module =
 	let ft = function_type (myvoid) [| myint |] in
-	let f = declare_function "writeInteger" ft the_module in
+        ignore(declare_function "writeInteger" ft the_module);
         ignore(lib_func_lst := "writeInteger"::(!lib_func_lst));
 	
         let ft = function_type (myvoid) [| mybyte |] in
-	let f = declare_function "writeByte" ft the_module in
+        ignore(declare_function "writeByte" ft the_module);
 	ignore(lib_func_lst := "writeByte"::(!lib_func_lst));
 
         let ft = function_type (myvoid) [| mybyte |] in
-	let f = declare_function "writeChar" ft the_module in
+        ignore(declare_function "writeChar" ft the_module);
 	ignore(lib_func_lst := "writeChar"::(!lib_func_lst));
 
         let ft = function_type (myvoid) [| mybyteref |] in
-	let f = declare_function "writeString" ft the_module in
+        ignore(declare_function "writeString" ft the_module);
 	ignore(lib_func_lst := "writeString"::(!lib_func_lst));
 
         let ft = function_type (myint) [| |] in
-	let f = declare_function "readInteger" ft the_module in
+        ignore(declare_function "readInteger" ft the_module);
 	ignore(lib_func_lst := "readInteger"::(!lib_func_lst));
 
         let ft = function_type (mybyte) [| |] in
-	let f = declare_function "readByte" ft the_module in
+        ignore(declare_function "readByte" ft the_module);
 	ignore(lib_func_lst := "readByte"::(!lib_func_lst));
 
         let ft = function_type (mybyte) [| |] in
-	let f = declare_function "readChar" ft the_module in
+        ignore(declare_function "readChar" ft the_module);
         ignore(lib_func_lst := "readChar"::(!lib_func_lst));
 	
         let ft = function_type (myvoid) [| myint; mybyteref |] in
-	let f = declare_function "readString" ft the_module in
+        ignore(declare_function "readString" ft the_module);
 	ignore(lib_func_lst := "readString"::(!lib_func_lst));
 
         let ft = function_type (myint) [| mybyte |] in
-	let f = declare_function "extend" ft the_module in
+        ignore(declare_function "extend" ft the_module);
 	ignore(lib_func_lst := "extend"::(!lib_func_lst));
 
         let ft = function_type (mybyte) [| myint |] in
-	let f = declare_function "shrink" ft the_module in
+        ignore(declare_function "shrink" ft the_module);
 	ignore(lib_func_lst := "shrink"::(!lib_func_lst));
 
         let ft = function_type (myint) [| mybyteref |] in
-	let f = declare_function "strlen" ft the_module in
+        ignore(declare_function "strlen" ft the_module);
 	ignore(lib_func_lst := "strlen"::(!lib_func_lst));
 
         let ft = function_type (myint) [| mybyteref; mybyteref |] in
-	let f = declare_function "strcmp" ft the_module in
+        ignore(declare_function "strcmp" ft the_module);
 	ignore(lib_func_lst := "strcmp"::(!lib_func_lst));
 
         let ft = function_type (myvoid) [| mybyteref; mybyteref |] in
-	let f = declare_function "strcpy" ft the_module in
+        ignore(declare_function "strcpy" ft the_module);
 	ignore(lib_func_lst := "strcpy"::(!lib_func_lst));
 
         let ft = function_type (myvoid) [| mybyteref; mybyteref |] in
-	let f = declare_function "strcat" ft the_module in
+        ignore(declare_function "strcat" ft the_module);
         ignore(lib_func_lst := "strcat"::(!lib_func_lst));
 
 	()

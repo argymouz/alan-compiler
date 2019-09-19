@@ -154,7 +154,7 @@ let rec typing node =
                                 let x = Program_t(typing ast1, Stmt) in
                                 x
                         )
-			else (
+			else ( (* if main is not proc, its return value has to be saved somewhere *)
                                 match ret_type with
                                 | Proc -> 
                                 (
@@ -441,7 +441,6 @@ let rec typing node =
 					| (Cond, Cond) -> Binop_t(expr1_t, binop, expr2_t, Cond)
 					| _ -> error "Logic binop mismatch"; Empty_t
 				end		
-			| _ -> error "Illegal Binary Op"; Empty_t
 		end
 	| Assign(expr1, expr2) ->
 	(

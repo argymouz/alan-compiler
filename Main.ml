@@ -11,15 +11,6 @@ open Error
 open Codegen
 
 let main =
- let rec sizeof list = 
- match list with
- | [] -> 0
- | x::hs -> 1+sizeof(hs)
- in
-(* let cin = 
-   if Array.length Sys.argv >1 then open_in Sys.argv.(2) else stdin
- in
-*)
  let cin = stdin in
  let lexbuf = Lexing.from_channel cin in
  try
