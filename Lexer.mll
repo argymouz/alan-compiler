@@ -115,17 +115,3 @@ and comments level = parse
 	| '\n' {incr_linenum lexbuf; comments level lexbuf;}
 	| _ { comments level lexbuf }
 	| eof { error "comments are not closed, nesting level is: (%d)\n" (level) ; T_eof }
-	
-{
-(*
-
-	let main =    
-		let cin = if Array.length Sys.argv >1 then open_in Sys.argv.(1) else stdin in
-		let lexbuf = Lexing.from_channel cin in
-		let rec loop () =
-			let token = lexer lexbuf in
-			Printf.printf "token=%s, lexeme=\"%s\"\n" (string_of_token token) (Lexing.lexeme lexbuf);
-      		if token <> T_eof then loop () in
-		loop ()
-*)
-}

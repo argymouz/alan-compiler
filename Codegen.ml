@@ -130,66 +130,98 @@ and codegen_body body fr =
                         )
                 )
         | If_t(cond, then_, dtyp) ->
-		let cond_val = codegen_body cond fr in
-		(*should be bool*)
-		let start_bb = insertion_block builder in
-		let the_function = block_parent start_bb in
-		let then_bb = append_block context "then" the_function in
-		position_at_end then_bb builder;
-		ret_flag := 0;
-                ignore(codegen_body then_ fr);
-		let new_then_bb = insertion_block builder in
-		let merge_bb = append_block context "ifcont" the_function in
-		position_at_end start_bb builder;
-		ignore (build_cond_br cond_val then_bb merge_bb builder);
-		position_at_end new_then_bb builder;
+        (
+                match cond with
+                | Binop_t(lhs, And, rhs, _) ->
+                (
+                        ignore(codegen_body (If_t(lhs, If_t(rhs, then_, dtyp), dtyp)) fr);
+                        const_null myint
+                )
+                | Binop_t(lhs, Or, rhs, _) ->
+                (
+                        ignore(codegen_body (If_Else_t(lhs, then_, If_t(rhs, then_, dtyp), dtyp)) fr);
+		        const_null myint
+                )
+                | _ ->
+                ( 
+		        let cond_val = codegen_body cond fr in
+		        (*should be bool*)
+		        let start_bb = insertion_block builder in
+		        let the_function = block_parent start_bb in
+		        let then_bb = append_block context "then" the_function in
+		        position_at_end then_bb builder;
+		        ret_flag := 0;
+                        ignore(codegen_body then_ fr);
+		        let new_then_bb = insertion_block builder in
+		        let merge_bb = append_block context "ifcont" the_function in
+		        position_at_end start_bb builder;
+		        ignore(build_cond_br cond_val then_bb merge_bb builder);
+		        position_at_end new_then_bb builder;
 
-		(*NOT ALWAYS NECESSARY*)
-		(
-			if (!ret_flag = 0) then (ignore (build_br merge_bb builder);)
-			else ()
-		);
-		ret_flag := 0;
-		position_at_end merge_bb builder;
-		const_null myint
+		        (*NOT ALWAYS NECESSARY*)
+		        (
+			        if (!ret_flag = 0) then (ignore (build_br merge_bb builder);)
+			        else ()
+		        );
+		        ret_flag := 0;
+		        position_at_end merge_bb builder;
+		        const_null myint
+                )
+        )
         | If_Else_t(cond, then_, else_, dtyp) ->
-		let cond_val = codegen_body cond fr in
-		let start_bb = insertion_block builder in
-		let the_function = block_parent start_bb in
-		let then_bb = append_block context "then" the_function in
-		position_at_end then_bb builder;
-		ret_flag := 0;
-                ignore(codegen_body then_ fr);
-		let tmp1 = (!ret_flag) in
-		let new_then_bb = insertion_block builder in
-
-		let merge_bb = append_block context "ifcont" the_function in
-		let else_bb = append_block context "else" the_function in
-		position_at_end else_bb builder;
-		ret_flag := 0;
-                ignore(codegen_body else_ fr);
-		let tmp2 = (!ret_flag) in
-		let new_else_bb = insertion_block builder in
-		position_at_end start_bb builder;
-		ignore (build_cond_br cond_val then_bb else_bb builder);
-		position_at_end new_then_bb builder;
-
-		(*NOT ALWAYS NECESSARY*)
+        (
+                match cond with
+                | Binop_t(lhs, And, rhs, _) ->
                 (
-                        if (tmp1=0) then (ignore (build_br merge_bb builder);)
-                        else ()
-                );      
-		ret_flag := 0;
-		position_at_end new_else_bb builder;
-
-		(* NOT ALWAYS NECESSARY *)
+                        ignore(codegen_body (If_Else_t(lhs, If_Else_t(rhs, then_, else_, dtyp), else_, dtyp)) fr);
+                        const_null myint
+                )
+                | Binop_t(lhs, Or, rhs, _) ->
                 (
-                        if (tmp2=0) then (ignore (build_br merge_bb builder);)
-                        else ()
-                );
-                ret_flag := 0;
-		position_at_end merge_bb builder;
-		const_null myint
+                        ignore(codegen_body (If_Else_t(lhs, then_, If_Else_t(rhs, then_, else_, dtyp), dtyp)) fr);
+                        const_null myint
+                )
+                | _ ->
+                (
+		        let cond_val = codegen_body cond fr in
+		        let start_bb = insertion_block builder in
+		        let the_function = block_parent start_bb in
+		        let then_bb = append_block context "then" the_function in
+		        position_at_end then_bb builder;
+		        ret_flag := 0;
+                        ignore(codegen_body then_ fr);
+		        let tmp1 = (!ret_flag) in
+		        let new_then_bb = insertion_block builder in
+
+		        let merge_bb = append_block context "ifcont" the_function in
+		        let else_bb = append_block context "else" the_function in
+		        position_at_end else_bb builder;
+		        ret_flag := 0;
+                        ignore(codegen_body else_ fr);
+		        let tmp2 = (!ret_flag) in
+		        let new_else_bb = insertion_block builder in
+		        position_at_end start_bb builder;
+		        ignore (build_cond_br cond_val then_bb else_bb builder);
+		        position_at_end new_then_bb builder;
+
+		        (*NOT ALWAYS NECESSARY*)
+                        (
+                                if (tmp1=0) then (ignore (build_br merge_bb builder);)
+                                else ()
+                        );      
+		        ret_flag := 0;
+		        position_at_end new_else_bb builder;
+
+		        (* NOT ALWAYS NECESSARY *)
+                        (
+                                if (tmp2=0) then (ignore (build_br merge_bb builder);)
+                                else ()
+                        );
+                        ret_flag := 0;
+		        position_at_end merge_bb builder;
+		        const_null myint
+                )
+        )
         | While_t(cond, do_, dtyp) ->
 		let start_bb = insertion_block builder in
 		let the_function = block_parent start_bb in
@@ -211,11 +243,11 @@ and codegen_body body fr =
 
 		(* NOT ALWAYS NECESSARY *)
 		(
-			if (!ret_flag = 0) then (ignore (build_br cond_bb builder);)
+			if (!ret_flag = 0) then (ignore(build_br cond_bb builder);)
 			else ()
 		);
 		ret_flag := 0;
-		position_at_end after_bb builder;
+                position_at_end after_bb builder;
 		const_null myint
 	| Assign_t(lhs, rhs, dtyp) ->
 		let target = codegen_ref lhs fr in
@@ -228,7 +260,7 @@ and codegen_body body fr =
 		| Some expr ->
 			let tmp = codegen_body expr fr in
 			build_ret tmp builder
-        )                
+        )              
 	| Unop_t(op, rhs, typ) ->
 		let rhs_val = codegen_body rhs fr in (
 		match op with
@@ -237,26 +269,22 @@ and codegen_body body fr =
 		| Minus -> build_neg rhs_val "negmp" builder)
         | Binop_t(lhs, op, rhs, typ) ->
 		let lhs_val = codegen_body lhs fr in
-		let rhs_val = codegen_body rhs fr in (
-		match op with
-		| Plus -> build_add lhs_val rhs_val "addtmp" builder
-		| Minus -> build_sub lhs_val rhs_val "subtmp" builder
-		| Mul -> build_mul lhs_val rhs_val "multmp" builder
-		| Div -> build_sdiv lhs_val rhs_val "divtmp" builder
-		| Mod -> build_urem lhs_val rhs_val "modtmp" builder
-		| Eq -> build_icmp Icmp.Eq lhs_val rhs_val "eqtmp" builder
-		| Neq -> build_icmp Icmp.Ne lhs_val rhs_val "eqtmp" builder
-		| More -> build_icmp Icmp.Sgt lhs_val rhs_val "moretmp" builder
-		| Less -> build_icmp Icmp.Slt lhs_val rhs_val "lesstmp" builder
-		| Morequ -> build_icmp Icmp.Sge lhs_val rhs_val "morequtmp" builder
-		| Lessequ -> build_icmp Icmp.Sle lhs_val rhs_val "lessequtmp" builder
-		| And -> (
-
-                        build_and lhs_val rhs_val "andtmp" builder
+		let rhs_val = codegen_body rhs fr in
+                (
+		        match op with
+		        | Plus -> build_add lhs_val rhs_val "addtmp" builder
+		        | Minus -> build_sub lhs_val rhs_val "subtmp" builder
+		        | Mul -> build_mul lhs_val rhs_val "multmp" builder
+		        | Div -> build_sdiv lhs_val rhs_val "divtmp" builder
+		        | Mod -> build_srem lhs_val rhs_val "modtmp" builder
+		        | Eq -> build_icmp Icmp.Eq lhs_val rhs_val "eqtmp" builder
+		        | Neq -> build_icmp Icmp.Ne lhs_val rhs_val "eqtmp" builder
+		        | More -> build_icmp Icmp.Sgt lhs_val rhs_val "moretmp" builder
+		        | Less -> build_icmp Icmp.Slt lhs_val rhs_val "lesstmp" builder
+		        | Morequ -> build_icmp Icmp.Sge lhs_val rhs_val "morequtmp" builder
+		        | Lessequ -> build_icmp Icmp.Sle lhs_val rhs_val "lessequtmp" builder
+                        | _ -> raise(Failure "Should not reach this point, & and | are resolved elsewhere!")
                 )
-		| Or -> (
-                        build_or lhs_val rhs_val "ortmp" builder
-                ))
 	| Const_t(t, typ) -> (
 		match t with
 		| Int(value) -> const_int myint value
@@ -307,6 +335,8 @@ and codegen_body body fr =
         )
 	| Empty_t -> const_null myint
 	| _ -> raise (Failure "CODEGEN CALLED FOR PARAM")
+
+(*and codegen_while_cond*)
 
 and codegen_ref node fr = 
 	match node with

@@ -296,7 +296,6 @@ let rec typing node =
 		Var_def_t(name,d_type,Stmt)
 	| Var_def_arr(name,d_type,size) ->
 		begin
-			Printf.printf "Registering array var of name %s\n" name;	
 			let i = Stack.top place_stack in
 			(
 				match d_type with
@@ -473,7 +472,7 @@ let rec typing node =
 			let depth = (!currentScope).sco_nesting - entr.entry_scope.sco_nesting in
 			let place = entr.frame_place in
 			match entr.entry_info with 
-			|ENTRY_variable(varinf) ->
+			| ENTRY_variable(varinf) ->
 			(
 				match varinf.variable_type with
 				|TYPE_int ->Lvalue_t(lvalue_t,depth,place,false,Int)
@@ -482,7 +481,7 @@ let rec typing node =
 				|TYPE_array(TYPE_byte,_) -> Lvalue_t(lvalue_t, depth, place, false, ByteArr)
 				|_ -> error "Invalid variable type"; Empty_t
 			)
-			|ENTRY_parameter(parinf) ->
+			| ENTRY_parameter(parinf) ->
 			(
                                 let flag = (parinf.parameter_mode = PASS_BY_REFERENCE) in
 			        match parinf.parameter_type with
@@ -500,7 +499,6 @@ let rec typing node =
 			if get_type(pos_t) <> Int
 			then begin error "Non-int index"; Empty_t end else
 			let lvalue_t = Arr(name, typing pos) in
-			Printf.printf "Searching for array var of name %s\n" name;
 			let entr = lookupEntry(id_make name) LOOKUP_ALL_SCOPES false in
 			let depth = (!currentScope).sco_nesting - entr.entry_scope.sco_nesting in
 			let place = entr.frame_place in
@@ -509,22 +507,14 @@ let rec typing node =
 			(
 				match varinf.variable_type with
 				| TYPE_array(TYPE_int, _) -> Lvalue_t(lvalue_t, depth, place, false, Int)
-				| TYPE_array(TYPE_byte, _) ->
-				(
-					Printf.printf "Found variable bytearr array var of name %s\n" name;	
-					Lvalue_t(lvalue_t, depth, place, false, Byte)
-				)
+				| TYPE_array(TYPE_byte, _) -> Lvalue_t(lvalue_t, depth, place, false, Byte)
 				| _ -> error "Invalid variable type"; Empty_t
 			)
 			| ENTRY_parameter(parinf) ->
 			(
 			        match parinf.parameter_type with
 				| TYPE_array(TYPE_int,_) -> Lvalue_t(lvalue_t, depth, place, true, Int)
-				| TYPE_array(TYPE_byte,_) ->
-				(
-					Printf.printf "Found parameter bytearr array var of name %s\n" name;	
-					Lvalue_t(lvalue_t, depth, place, true, Byte)
-				)
+				| TYPE_array(TYPE_byte,_) -> Lvalue_t(lvalue_t, depth, place, true, Byte)
 				|_ -> error "Invalid array type"; Empty_t
 			)
 			| _ -> error "Illegal array name"; Empty_t

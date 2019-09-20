@@ -18,9 +18,6 @@ let main =
     let t_ast = typing ast in 
 	let the_module = Codegen.top_codegen t_ast Sys.argv.(1) in
 	print_module "output.ll" the_module;
-	match (!numErrors) with
-	| 0 -> Printf.printf "Compilation SUCCEEDED :D\n";exit 0
-	| _ -> Printf.printf "Compilation FAILED :(\n";exit 1
   with Parser.Error ->
     Error.error "%a syntax error\n" Error.print_position (Error.position_point lexbuf.Lexing.lex_curr_p);
     Printf.printf "Compilation FAILED :(\n";
