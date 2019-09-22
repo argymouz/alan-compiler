@@ -8,7 +8,7 @@ main () : proc
       if (x >= 0)
       {
         x = x - 1;
-        writeString("My value was change by f2 to: ");
+        writeString("My value was changed by f2 to: ");
         writeInteger(x);
         writeChar('\n');
         f1();
