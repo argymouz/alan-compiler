@@ -3,11 +3,13 @@ main () : int
 {
   i = readInteger();
 
-  while((i > 0) & (i != 1))
+  if ((i%5 == 0) | (i%6 == 0))
   {
-    writeInteger(i);
-    writeChar('\n');
-    i = i - 1;
+    writeString("I am a multiple of 5 or 6!\n");
+  }
+  else
+  {
+    writeString("I am not a multiple of either!\n");
   }
   
   return 0;

@@ -152,57 +152,42 @@ and codegen_body body fr =
         )
         | If_Else_t(cond, then_, else_, dtyp) ->
         (
-                match cond with
-                | Binop_t(lhs, And, rhs, _) ->
-                (
-                        ignore(codegen_body (If_Else_t(lhs, If_Else_t(rhs, then_, else_, dtyp), else_, dtyp)) fr);
-                        const_null myint
-                )
-                | Binop_t(lhs, Or, rhs, _) ->
-                (
-                        ignore(codegen_body (If_Else_t(lhs, then_, If_Else_t(rhs, then_, else_, dtyp), dtyp)) fr);
-                        const_null myint
-                )
-                | _ ->
-                (
-		        let cond_val = codegen_body cond fr in
-		        let start_bb = insertion_block builder in
-		        let the_function = block_parent start_bb in
-		        let then_bb = append_block context "then" the_function in
-		        position_at_end then_bb builder;
-		        ret_flag := 0;
-                        ignore(codegen_body then_ fr);
-		        let tmp1 = (!ret_flag) in
-		        let new_then_bb = insertion_block builder in
+                let start_bb = insertion_block builder in
+		let the_function = block_parent start_bb in
+		let then_bb = append_block context "then" the_function in
+		position_at_end then_bb builder;
+		ret_flag := 0;
+                ignore(codegen_body then_ fr);
+		let tmp1 = (!ret_flag) in
+		let new_then_bb = insertion_block builder in
 
-		        let merge_bb = append_block context "ifcont" the_function in
-		        let else_bb = append_block context "else" the_function in
-		        position_at_end else_bb builder;
-		        ret_flag := 0;
-                        ignore(codegen_body else_ fr);
-		        let tmp2 = (!ret_flag) in
-		        let new_else_bb = insertion_block builder in
-		        position_at_end start_bb builder;
-		        ignore (build_cond_br cond_val then_bb else_bb builder);
-		        position_at_end new_then_bb builder;
+	        let merge_bb = append_block context "ifcont" the_function in
+	        let else_bb = append_block context "else" the_function in
+	        position_at_end else_bb builder;
+	        ret_flag := 0;
+                ignore(codegen_body else_ fr);
+	        let tmp2 = (!ret_flag) in
+	        let new_else_bb = insertion_block builder in
+                position_at_end start_bb builder;
+                ignore(codegen_logic_op cond then_bb else_bb fr;);
+	        position_at_end new_then_bb builder;
 
-		        (*NOT ALWAYS NECESSARY*)
-                        (
-                                if (tmp1=0) then (ignore (build_br merge_bb builder);)
-                                else ()
-                        );      
-		        ret_flag := 0;
-		        position_at_end new_else_bb builder;
+                (*NOT ALWAYS NECESSARY*)
+                (
+                        if (tmp1=0) then (ignore (build_br merge_bb builder);)
+                        else ()
+                );      
+		ret_flag := 0;
+		position_at_end new_else_bb builder;
 
-		        (* NOT ALWAYS NECESSARY *)
-                        (
-                                if (tmp2=0) then (ignore (build_br merge_bb builder);)
-                                else ()
-                        );
-                        ret_flag := 0;
-		        position_at_end merge_bb builder;
-		        const_null myint
-                )
+		(* NOT ALWAYS NECESSARY *)
+                (
+                        if (tmp2=0) then (ignore (build_br merge_bb builder);)
+                        else ()
+                );
+                ret_flag := 0;
+		position_at_end merge_bb builder;
+	        const_null myint
         )
         | While_t(cond, do_, dtyp) ->
                 let start_bb = insertion_block builder in

@@ -1,6 +1,9 @@
 ; ModuleID = 'alan'
 source_filename = "alan"
 
+@strtmp = private unnamed_addr constant [28 x i8] c"I am a multiple of 5 or 6!\0A\00"
+@strtmp.1 = private unnamed_addr constant [32 x i8] c"I am not a multiple of either!\0A\00"
+
 declare void @writeInteger(i16)
 
 declare void @writeByte(i8)
@@ -35,32 +38,27 @@ entry:
   %0 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
   %1 = call i16 @readInteger()
   store i16 %1, i16* %0
-  br label %cond
-
-cond:                                             ; preds = %entry, %do
   %2 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
-  %loadtmp3 = load i16, i16* %2
-  %moretmp = icmp sgt i16 %loadtmp3, 0
-  br i1 %moretmp, label %then, label %after
+  %loadtmp2 = load i16, i16* %2
+  %modtmp3 = srem i16 %loadtmp2, 5
+  %eqtmp4 = icmp eq i16 %modtmp3, 0
+  br i1 %eqtmp4, label %then, label %else1
 
-after:                                            ; preds = %cond, %then
+then:                                             ; preds = %entry, %else1
+  call void @writeString(i8* getelementptr inbounds ([28 x i8], [28 x i8]* @strtmp, i16 0, i16 0))
+  br label %ifcont
+
+ifcont:                                           ; preds = %else, %then
   ret i16 0
 
-do:                                               ; preds = %then
+else:                                             ; preds = %else1
+  call void @writeString(i8* getelementptr inbounds ([32 x i8], [32 x i8]* @strtmp.1, i16 0, i16 0))
+  br label %ifcont
+
+else1:                                            ; preds = %entry
   %3 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
   %loadtmp = load i16, i16* %3
-  call void @writeInteger(i16 %loadtmp)
-  call void @writeChar(i8 10)
-  %4 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
-  %5 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
-  %loadtmp1 = load i16, i16* %5
-  %subtmp = sub i16 %loadtmp1, 1
-  store i16 %subtmp, i16* %4
-  br label %cond
-
-then:                                             ; preds = %cond
-  %6 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
-  %loadtmp2 = load i16, i16* %6
-  %eqtmp = icmp ne i16 %loadtmp2, 1
-  br i1 %eqtmp, label %do, label %after
+  %modtmp = srem i16 %loadtmp, 6
+  %eqtmp = icmp eq i16 %modtmp, 0
+  br i1 %eqtmp, label %then, label %else
 }
