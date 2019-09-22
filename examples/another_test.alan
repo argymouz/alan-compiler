@@ -1,0 +1,12 @@
+main () : int
+  i : int;
+{
+  i = readInteger();
+
+  if ((i%5 == 0) | (i%6 == 0))
+  {
+    writeString("Hi!\n");
+  }
+  
+  return 0;
+}

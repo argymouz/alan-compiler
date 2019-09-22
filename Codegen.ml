@@ -53,7 +53,7 @@ let rec top_codegen tree optimization = (
 			else ()
 		);
                 ignore(codegen program);
-                Llvm_analysis.assert_valid_module the_module;
+                (*Llvm_analysis.assert_valid_module the_module;*)
 		the_module
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n"))
 
@@ -92,7 +92,7 @@ and codegen tree = (
                                 ignore(codegen_body comp_body fr); (* codegen the body *)
 
 				ignore(Stack.pop type_stack);
-				Llvm_analysis.assert_valid_function f;
+				(*Llvm_analysis.assert_valid_function f;*)
 				let _ = PassManager.run_function f the_fpm in
 				f
 			)
@@ -131,42 +131,24 @@ and codegen_body body fr =
                 )
         | If_t(cond, then_, dtyp) ->
         (
-                match cond with
-                | Binop_t(lhs, And, rhs, _) ->
+                let start_bb = insertion_block builder in
+                let the_function = block_parent start_bb in
+                let then_bb = append_block context "then" the_function in
+                position_at_end then_bb builder;
+                ret_flag := 0;
+                ignore(codegen_body then_ fr);
+                let new_then_bb = insertion_block builder in
+                position_at_end new_then_bb builder;
+                let merge_bb = append_block context "ifcont" the_function in
                 (
-                        ignore(codegen_body (If_t(lhs, If_t(rhs, then_, dtyp), dtyp)) fr);
-                        const_null myint
-                )
-                | Binop_t(lhs, Or, rhs, _) ->
-                (
-                        ignore(codegen_body (If_Else_t(lhs, then_, If_t(rhs, then_, dtyp), dtyp)) fr);
-		        const_null myint
-                )
-                | _ ->
-                ( 
-		        let cond_val = codegen_body cond fr in
-		        (*should be bool*)
-		        let start_bb = insertion_block builder in
-		        let the_function = block_parent start_bb in
-		        let then_bb = append_block context "then" the_function in
-		        position_at_end then_bb builder;
-		        ret_flag := 0;
-                        ignore(codegen_body then_ fr);
-		        let new_then_bb = insertion_block builder in
-		        let merge_bb = append_block context "ifcont" the_function in
-		        position_at_end start_bb builder;
-		        ignore(build_cond_br cond_val then_bb merge_bb builder);
-		        position_at_end new_then_bb builder;
-
-		        (*NOT ALWAYS NECESSARY*)
-		        (
-			        if (!ret_flag = 0) then (ignore (build_br merge_bb builder);)
-			        else ()
-		        );
-		        ret_flag := 0;
-		        position_at_end merge_bb builder;
-		        const_null myint
-                )
+		        if (!ret_flag = 0) then (ignore (build_br merge_bb builder);)
+			else ()
+		);
+                ret_flag := 0;
+                position_at_end start_bb builder;
+                ignore(codegen_logic_op cond then_bb merge_bb 0 fr);
+                position_at_end merge_bb builder;
+                const_null myint
         )
         | If_Else_t(cond, then_, else_, dtyp) ->
         (
@@ -336,7 +318,46 @@ and codegen_body body fr =
 	| Empty_t -> const_null myint
 	| _ -> raise (Failure "CODEGEN CALLED FOR PARAM")
 
-(*and codegen_while_cond*)
+and codegen_logic_op cond then_bb else_bb num fr =
+        match num with (* 0 -> if, 1 -> if_else, 2 -> while *)
+        | 0 -> (* in the case of if else_bb is merge_bb*)
+        (
+                match cond with
+                | Binop_t(lhs, And, rhs, dtyp) ->
+                (
+                        let start_bb = insertion_block builder in
+                        let the_function = block_parent start_bb in
+                        let then_bb1 = append_block context "then" the_function in
+                        position_at_end then_bb1 builder;
+                        codegen_logic_op rhs then_bb else_bb 0 fr;
+                        position_at_end start_bb builder;
+                        codegen_logic_op lhs then_bb1 else_bb 0 fr;
+                )
+                | Binop_t(lhs, Or, rhs, dtyp) ->
+                (
+                        let start_bb = insertion_block builder in
+                        let the_function = block_parent start_bb in
+                        let else_bb1 = append_block context "else" the_function in
+                        position_at_end else_bb1 builder;
+                        codegen_logic_op rhs then_bb else_bb 0 fr;
+                        position_at_end start_bb builder;
+                        codegen_logic_op lhs then_bb else_bb1 0 fr;
+                )
+                | _ ->
+                (
+                        let cond_val = codegen_body cond fr in
+                        ignore(build_cond_br cond_val then_bb else_bb builder);
+                )
+        )
+        | 1 ->
+        (
+                
+        )
+        | 2 ->
+        (
+                
+        )
+        | _ -> raise (Failure "Function is never called with this argument.")
 
 and codegen_ref node fr = 
 	match node with
