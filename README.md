@@ -20,7 +20,7 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 5) make distclean 
 
-NOTES
+## Notes
 
 ./alan.sh takes input from stdin.
 
