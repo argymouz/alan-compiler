@@ -1,8 +1,6 @@
 ; ModuleID = 'alan'
 source_filename = "alan"
 
-@strtmp = private unnamed_addr constant [5 x i8] c"Hi!\0A\00"
-
 declare void @writeInteger(i16)
 
 declare void @writeByte(i8)
@@ -37,23 +35,32 @@ entry:
   %0 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
   %1 = call i16 @readInteger()
   store i16 %1, i16* %0
+  br label %cond
+
+cond:                                             ; preds = %entry, %do
   %2 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
-  %loadtmp1 = load i16, i16* %2
-  %modtmp2 = srem i16 %loadtmp1, 5
-  %eqtmp3 = icmp eq i16 %modtmp2, 0
-  br i1 %eqtmp3, label %then, label %else
+  %loadtmp3 = load i16, i16* %2
+  %moretmp = icmp sgt i16 %loadtmp3, 0
+  br i1 %moretmp, label %then, label %after
 
-then:                                             ; preds = %entry, %else
-  call void @writeString(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strtmp, i16 0, i16 0))
-  ret i16 1
-
-ifcont:                                           ; preds = %else
+after:                                            ; preds = %cond, %then
   ret i16 0
 
-else:                                             ; preds = %entry
+do:                                               ; preds = %then
   %3 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
   %loadtmp = load i16, i16* %3
-  %modtmp = srem i16 %loadtmp, 6
-  %eqtmp = icmp eq i16 %modtmp, 0
-  br i1 %eqtmp, label %then, label %ifcont
+  call void @writeInteger(i16 %loadtmp)
+  call void @writeChar(i8 10)
+  %4 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
+  %5 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
+  %loadtmp1 = load i16, i16* %5
+  %subtmp = sub i16 %loadtmp1, 1
+  store i16 %subtmp, i16* %4
+  br label %cond
+
+then:                                             ; preds = %cond
+  %6 = getelementptr inbounds { i16 }, { i16 }* %main.fr, i32 0, i32 0
+  %loadtmp2 = load i16, i16* %6
+  %eqtmp = icmp ne i16 %loadtmp2, 1
+  br i1 %eqtmp, label %do, label %after
 }

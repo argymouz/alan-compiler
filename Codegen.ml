@@ -205,32 +205,29 @@ and codegen_body body fr =
                 )
         )
         | While_t(cond, do_, dtyp) ->
-		let start_bb = insertion_block builder in
-		let the_function = block_parent start_bb in
-		let cond_bb = append_block context "cond" the_function in
-		position_at_end cond_bb builder;
-		let cond_val = codegen_body cond fr in
-		let new_cond_bb = insertion_block builder in
-		let after_bb = append_block context "after" the_function in
-		let do_bb = append_block context "do" the_function in
-		position_at_end do_bb builder;
-		ret_flag := 0;
+                let start_bb = insertion_block builder in
+                let the_function = block_parent start_bb in
+                let cond_bb = append_block context "cond" the_function in
+                let after_bb = append_block context "after" the_function in
+                let do_bb = append_block context "do" the_function in
+                position_at_end do_bb builder;
+                ret_flag := 0;
                 ignore(codegen_body do_ fr);
-		let new_do_bb = insertion_block builder in
-		position_at_end start_bb builder;
-		ignore (build_br cond_bb builder);
-		position_at_end new_cond_bb builder;
-		ignore (build_cond_br cond_val do_bb after_bb builder);
+                let new_do_bb = insertion_block builder in
 		position_at_end new_do_bb builder;
 
-		(* NOT ALWAYS NECESSARY *)
+                (* NOT ALWAYS NECESSARY *)
 		(
 			if (!ret_flag = 0) then (ignore(build_br cond_bb builder);)
 			else ()
 		);
-		ret_flag := 0;
+                ret_flag := 0;
+                position_at_end start_bb builder;
+                ignore (build_br cond_bb builder);
+                position_at_end cond_bb builder;
+                codegen_logic_op cond do_bb after_bb fr;
                 position_at_end after_bb builder;
-		const_null myint
+                const_null myint
 	| Assign_t(lhs, rhs, dtyp) ->
 		let target = codegen_ref lhs fr in
 		let source = codegen_body rhs fr in

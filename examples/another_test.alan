@@ -3,10 +3,11 @@ main () : int
 {
   i = readInteger();
 
-  if ((i%5 == 0) | (i%6 == 0))
+  while((i > 0) & (i != 1))
   {
-    writeString("Hi!\n");
-    return 1;
+    writeInteger(i);
+    writeChar('\n');
+    i = i - 1;
   }
   
   return 0;
