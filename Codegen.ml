@@ -53,7 +53,7 @@ let rec top_codegen tree optimization = (
 			else ()
 		);
                 ignore(codegen program);
-                (*Llvm_analysis.assert_valid_module the_module;*)
+                Llvm_analysis.assert_valid_module the_module;
 		the_module
 	| _ -> raise (Failure "TOP_CODEGEN CALLED FOR NON_PROGRAM NODE\n"))
 
@@ -92,7 +92,7 @@ and codegen tree = (
                                 ignore(codegen_body comp_body fr); (* codegen the body *)
 
 				ignore(Stack.pop type_stack);
-				(*Llvm_analysis.assert_valid_function f;*)
+				Llvm_analysis.assert_valid_function f;
 				let _ = PassManager.run_function f the_fpm in
 				f
 			)
@@ -508,22 +508,6 @@ and declare_runtimes the_module =
         ignore(lib_func_lst := "strcat"::(!lib_func_lst));
 
 	()
-
-and ll_typ a = (
-	match a with
-	| Int -> myint
-	| Byte -> mybyte
-	| IntArr -> myintref
-	| ByteArr -> mybyteref
-        | _ -> raise (Failure "Invalid type!"))
-
-and ll_typ_ref a = (
-	match a with
-	| Int -> myintref
-	| Byte -> mybyteref
-	| IntArr -> myintref
-	| ByteArr -> mybyteref
-        | _ -> raise (Failure "Invalid type!"))
 
 and ret_ll_typ a = (
 	match a with
