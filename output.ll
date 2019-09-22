@@ -45,9 +45,9 @@ entry:
 
 then:                                             ; preds = %entry, %else
   call void @writeString(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @strtmp, i16 0, i16 0))
-  br label %ifcont
+  ret i16 1
 
-ifcont:                                           ; preds = %else, %then
+ifcont:                                           ; preds = %else
   ret i16 0
 
 else:                                             ; preds = %entry

@@ -146,7 +146,7 @@ and codegen_body body fr =
 		);
                 ret_flag := 0;
                 position_at_end start_bb builder;
-                ignore(codegen_logic_op cond then_bb merge_bb 0 fr);
+                codegen_logic_op cond then_bb merge_bb fr;
                 position_at_end merge_bb builder;
                 const_null myint
         )
@@ -318,47 +318,34 @@ and codegen_body body fr =
 	| Empty_t -> const_null myint
 	| _ -> raise (Failure "CODEGEN CALLED FOR PARAM")
 
-and codegen_logic_op cond then_bb else_bb num fr =
-        match num with (* 0 -> if, 1 -> if_else, 2 -> while *)
-        | 0 -> (* in the case of if else_bb is merge_bb*)
+and codegen_logic_op cond then_bb else_bb fr =
+        match cond with
+        | Binop_t(lhs, And, rhs, dtyp) ->
         (
-                match cond with
-                | Binop_t(lhs, And, rhs, dtyp) ->
-                (
-                        let start_bb = insertion_block builder in
-                        let the_function = block_parent start_bb in
-                        let then_bb1 = append_block context "then" the_function in
-                        position_at_end then_bb1 builder;
-                        codegen_logic_op rhs then_bb else_bb 0 fr;
-                        position_at_end start_bb builder;
-                        codegen_logic_op lhs then_bb1 else_bb 0 fr;
-                )
-                | Binop_t(lhs, Or, rhs, dtyp) ->
-                (
-                        let start_bb = insertion_block builder in
-                        let the_function = block_parent start_bb in
-                        let else_bb1 = append_block context "else" the_function in
-                        position_at_end else_bb1 builder;
-                        codegen_logic_op rhs then_bb else_bb 0 fr;
-                        position_at_end start_bb builder;
-                        codegen_logic_op lhs then_bb else_bb1 0 fr;
-                )
-                | _ ->
-                (
-                        let cond_val = codegen_body cond fr in
-                        ignore(build_cond_br cond_val then_bb else_bb builder);
-                )
+                let start_bb = insertion_block builder in
+                let the_function = block_parent start_bb in
+                let then_bb1 = append_block context "then" the_function in
+                position_at_end then_bb1 builder;
+                codegen_logic_op rhs then_bb else_bb fr;
+                position_at_end start_bb builder;
+                codegen_logic_op lhs then_bb1 else_bb fr;
         )
-        | 1 ->
+        | Binop_t(lhs, Or, rhs, dtyp) ->
         (
-                
+                let start_bb = insertion_block builder in
+                let the_function = block_parent start_bb in
+                let else_bb1 = append_block context "else" the_function in
+                position_at_end else_bb1 builder;
+                codegen_logic_op rhs then_bb else_bb fr;
+                position_at_end start_bb builder;
+                codegen_logic_op lhs then_bb else_bb1 fr;
         )
-        | 2 ->
+        | _ ->
         (
-                
+                let cond_val = codegen_body cond fr in
+                ignore(build_cond_br cond_val then_bb else_bb builder);
         )
-        | _ -> raise (Failure "Function is never called with this argument.")
-
+       
 and codegen_ref node fr = 
 	match node with
         | Lvalue_t(Variable(name), depth, place, flag, dtyp) ->
