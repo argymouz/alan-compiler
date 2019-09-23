@@ -152,7 +152,11 @@ let lookupEntry id how err =
         else
           raise Not_found
     | LOOKUP_ALL_SCOPES ->
-        H.find !tab id in
+        try
+          H.find !tab id
+        with Not_found ->
+          raise (Failure "Not found because you probably forgot to declare it. :P")
+  in
   if err then
     try
       lookup ()
