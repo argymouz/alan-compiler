@@ -19,7 +19,7 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 3) ./alan [-o] [-i|-f] < test.alan
 
-4) ./exe (if using -f flag)
+4) ./test (if using -f flag)
 
 5) make distclean 
 
@@ -29,6 +29,8 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 -o flag must go before -i or -f to be registered.
 
-Intermediate code in both cases goes to .imm file.
+Intermediate code in both cases goes to test.imm file.
 
-Final code goes to .asm file.
+Final code goes to test.asm file.
+
+The files that are produced are saved in the same directory as the file with the source code.
