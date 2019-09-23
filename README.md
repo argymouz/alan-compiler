@@ -15,11 +15,9 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 ## Instructions
 
-1) make depend
+1) make
 
-2) make all
-
-3) ./alan.sh [-o] [-i|-f] < test.alan
+3) ./alan [-o] [-i|-f] < test.alan
 
 4) ./exe (if using -f flag)
 
@@ -27,10 +25,10 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 ## Notes
 
-./alan.sh takes input from stdin.
+./alan takes input from stdin.
 
 -o flag must go before -i or -f to be registered.
 
-Intermediate code in both cases goes to output.ll.
+Intermediate code in both cases goes to .imm file.
 
-Final code goes to output.s.
+Final code goes to .asm file.
