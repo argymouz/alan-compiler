@@ -8,7 +8,7 @@ MLIFILES=Hashcons.mli Identifier.mli Error.mli Types.mli Symbol.mli \
 CMOFILES=$(patsubst %.ml,%.cmo,$(MLFILES))
 CMIFILES=$(patsubst %.ml,%.cmi,$(MLFILES))
 OBJFILES=$(patsubst %.ml,%.o,$(MLFILES))
-PARSERFILES=Parser.ml Parser.mli Parser.output Lexer.ml
+PARSERFILES=Parser.ml Parser.mli Parser.output Lexer.ml Parser.automaton Parser.conflicts ParserError.ml ParserError.mli
 SRCFILES=Makefile extend.ml Lexer.mll Parser.mly Semantic.ml Codegen.ml \
   $(filter-out Parser.% Lexer.%,$(MLFILES)) \
   $(filter-out Parser.%,$(MLIFILES))
@@ -46,8 +46,7 @@ Lexer.ml: Lexer.mll
 
 depend: $(MLFILES) $(MLIFILES) extend.cmo
 	$(OCAMLDEP) $(CAMLP5_FLAGS) $(INCLUDES) \
-          $(filter-out extend.cmo,$^) > .depend
-
+	$(filter-out extend.cmo,$^) > .depend
 
 clean:
 	$(RM) $(CMOFILES) $(CMIFILES) $(OBJFILES) $(EXEFILES) \
