@@ -10,7 +10,7 @@
 *.conflicts
 
 # Lexer files
-Lexer.mli
+Lexer.ml
 
 # Parser files
 Parser.automaton
