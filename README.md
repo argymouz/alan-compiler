@@ -21,7 +21,7 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 3) ./alan -O test.alan (to compile .imm .asm and executable )
 
-./test
+   ./test
 
 4) make distclean
 
