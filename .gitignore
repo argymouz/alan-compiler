@@ -7,6 +7,18 @@
 *.cmx
 *.cmxs
 *.cmxa
+*.conflicts
+
+# Lexer files
+Lexer.mli
+
+# Parser files
+Parser.automaton
+Parser.ml
+Parser.mli
+
+# exec
+alan
 
 # ocamlbuild working directory
 _build/
