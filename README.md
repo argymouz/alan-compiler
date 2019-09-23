@@ -27,8 +27,6 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 ./alan takes input from stdin.
 
--o flag must go before -i or -f to be registered.
-
 Intermediate code in both cases goes to test.imm file.
 
 Final code goes to test.asm file.
