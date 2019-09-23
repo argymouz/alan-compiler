@@ -17,17 +17,13 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 1) make
 
-3) ./alan [-O] [-i|-f] (to read from stdin and output code to stdout)
+2) ./alan [-O] [-i|-f] (to read from stdin and output code to stdout)
 
-4) ./alan -O test.alan (to compile .imm .asm and executable )
-<<<<<<< HEAD
+3) ./alan -O test.alan (to compile .imm .asm and executable )
 
-=======
-   
->>>>>>> 4d4b50a0820c5163768f9a91263bf6216abbc465
-   ./test
+./test
 
-5) make distclean
+4) make distclean
 
 ## Notes
 
