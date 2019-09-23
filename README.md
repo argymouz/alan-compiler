@@ -29,8 +29,8 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 ./alan takes input from stdin only if -i or -f flags are given.
 
-Intermediate code in both cases goes to test.imm file.
+Intermediate code goes to test.imm file if a file is given.
 
-Final code goes to test.asm file.
+Final code goes to test.asm file if a file is given.
 
 The files that are produced are saved in the same directory as the file with the source code.
