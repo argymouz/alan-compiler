@@ -17,15 +17,16 @@ Details concerning the Alan language can be found in alan2018.pdf.
 
 1) make
 
-3) ./alan [-o] [-i|-f] < test.alan
+3) ./alan [-O] [-i|-f] (to read from stdin and output code to stdout)
 
-4) ./test (if using -f flag)
+4) ./alan -O test.alan (to compile .imm .asm and executable )
+   ./test
 
 5) make distclean 
 
 ## Notes
 
-./alan takes input from stdin.
+./alan takes input from stdin only if -i or -f flags are given.
 
 Intermediate code in both cases goes to test.imm file.
 
