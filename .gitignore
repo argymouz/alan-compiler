@@ -9,6 +9,9 @@
 *.cmxa
 *.conflicts
 
+#examples
+examples
+
 # Lexer files
 Lexer.ml
 
