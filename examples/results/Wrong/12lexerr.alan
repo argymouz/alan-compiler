@@ -1,6 +1,0 @@
-main () : proc
-   a : byte;
-{
-   a = '\xWW';
-   writeString("\nThis program is wrong!\n");
-}

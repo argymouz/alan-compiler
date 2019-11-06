@@ -1,8 +1,0 @@
-main () : proc
-   f () : proc { writeString("wrong!!!\n"); }
-   g () : proc
-      f () : proc { writeString("42\n"); }
-   { f(); }
-{
-   g();
-}

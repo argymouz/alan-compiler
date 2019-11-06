@@ -1,9 +1,0 @@
-add () : proc
-  x : int;
-  y : int;
-{
-  x = 14;
-  y = 28;
-  writeInteger(x + y);
-  writeString("\n");
-}
