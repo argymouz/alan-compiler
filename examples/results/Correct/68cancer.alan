@@ -1,0 +1,28 @@
+cancer() : proc
+
+   is_it (n:int, source:reference byte[]) : int
+      i:int;
+   {
+      i=0;
+      while (i < n/2) {
+         if (source[i]!=source[n-i-1])
+            return 0;
+         i=i+1;
+      }
+      return 1;
+   }
+	
+   n : int;
+   source : byte[31];
+   
+{
+   writeString("Give a string with maximum length 30: ");
+   readString(30, source);
+   n=0;
+   while (source[n]!='\0')
+      n=n+1;
+   if (is_it(n, source)==1)
+      writeString("\nIs cancer...\n");
+   else
+      writeString("\nIs not cancer...\n");
+}

@@ -225,12 +225,13 @@ and codegen_body body fr =
 			let tmp = codegen_body expr fr in
 			build_ret tmp builder
         )              
-	| Unop_t(op, rhs, typ) ->
+	| Unop_t(op, rhs, typ) -> (
 		let rhs_val = codegen_body rhs fr in (
 		match op with
-		| Neg -> build_not rhs_val "nottmp" builder
 		| Plus -> rhs_val
-		| Minus -> build_neg rhs_val "negmp" builder)
+		| Minus -> build_neg rhs_val "negmp" builder
+                | _ -> raise(Failure "Should not reach this point, negation is resolved elsewhere!"))
+        )
         | Binop_t(lhs, op, rhs, typ) ->
 		let lhs_val = codegen_body lhs fr in
 		let rhs_val = codegen_body rhs fr in
@@ -321,6 +322,10 @@ and codegen_logic_op cond then_bb else_bb fr =
                 codegen_logic_op rhs then_bb else_bb fr;
                 position_at_end start_bb builder;
                 codegen_logic_op lhs then_bb else_bb1 fr;
+        )
+        | Unop_t(Neg, rhs, typ) ->
+        (
+                ignore(codegen_logic_op rhs else_bb then_bb fr);
         )
         | _ ->
         (

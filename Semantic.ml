@@ -183,7 +183,7 @@ let rec typing node =
 			else
 			(
 				let prev_top = Stack.top name_stack in
-                                let curr_top = String.concat "_" [prev_top; name] in
+                                let curr_top = String.concat "-" [prev_top; name] in
 				ignore(Stack.push curr_top name_stack);
 			)
 		);
@@ -315,9 +315,9 @@ let rec typing node =
 			match func.entry_info with
 			| ENTRY_function(fn) ->
 				begin
-					let name_lst = String.split_on_char '_' (Stack.top name_stack) in
+					let name_lst = String.split_on_char '-' (Stack.top name_stack) in
 					let llvm_name_lst = create_llvm_name_lst name_lst (func.entry_scope.sco_nesting) [] in
-					let llvm_name = String.concat "_" (llvm_name_lst@[name]) in
+					let llvm_name = String.concat "-" (llvm_name_lst@[name]) in
 					let arg_l_t = do_all_opt(typing, arg_l) in
 
 					check_types_l_opt_ref(arg_l_t, fn.function_paramlist);

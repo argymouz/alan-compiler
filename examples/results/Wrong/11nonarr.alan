@@ -1,0 +1,6 @@
+main () : proc
+   a : int;
+{
+   a[5] = a[5];
+   writeString("\nThis program is wrong!\n");
+}

@@ -1,0 +1,10 @@
+main () : proc
+   i : int;
+{
+   i = 5;
+   writeInteger(i);
+   writeString("\nthis program is wrong!\n");
+
+(*
+where did that comment go?
+
