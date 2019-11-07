@@ -10,7 +10,7 @@
 *.conflicts
 
 #examples
-./examples/results
+examples/results/
 
 # Lexer files
 Lexer.ml
