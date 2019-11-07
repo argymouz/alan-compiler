@@ -1,6 +1,0 @@
-main () : proc
-   f (a : int []) : proc { writeString("\nThis program is wrong!\n"); }
-   x : int[10];
-{
-   f(x);
-}

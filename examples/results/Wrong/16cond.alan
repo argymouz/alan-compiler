@@ -1,6 +1,0 @@
-main () : proc
-   c : int;
-{
-   c = true;
-   writeString("\nThis program is wrong!\n");
-}
