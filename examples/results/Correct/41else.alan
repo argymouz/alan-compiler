@@ -1,0 +1,14 @@
+main () : proc
+
+   test (x : int, msg1 : reference byte [], msg2 : reference byte [],
+                  msg3 : reference byte []) : proc
+   {
+      if (x != 1) if (x != 2) writeString(msg3); else writeString(msg2);
+      if (x == 1) writeString(msg1);
+   }
+
+{
+   test(1, "4", "\n\nwrong!!!\n\n", "\n\nwrong!!!\n\n");
+   test(2, "\n\nwrong!!!\n\n", "2", "\n\nwrong!!!\n\n");
+   test(3, "\n\nwrong!!!\n\n", "\n\nwrong!!!\n\n", "\n");
+}

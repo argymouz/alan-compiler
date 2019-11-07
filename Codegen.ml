@@ -250,12 +250,14 @@ and codegen_body body fr =
 		        | Lessequ -> build_icmp Icmp.Sle lhs_val rhs_val "lessequtmp" builder
                         | _ -> raise(Failure "Should not reach this point, & and | are resolved elsewhere!")
                 )
-	| Const_t(t, typ) -> (
+	| Const_t(t, typ) ->
+        (
 		match t with
 		| Int(value) -> const_int myint value
 		| Char(value) -> const_int mybyte value
 		| True -> const_int mybit 1
-		| False -> const_int mybit 0)
+		| False -> const_int mybit 0
+        )
 	| Lvalue_t(first, depth, place, flag, dtyp) ->
         (
 		match first with

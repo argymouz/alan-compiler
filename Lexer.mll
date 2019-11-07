@@ -15,6 +15,13 @@ let lnum lexbuf =
 	let pos=lexbuf.Lexing.lex_curr_p in 
 		pos.Lexing.pos_lnum;
 ;;
+let my_int_of_char x =
+        match x with
+        | '0' |'1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' -> (int_of_char(x) - int_of_char('0'))
+        | 'a' | 'b' | 'c' | 'd' | 'e' | 'f' -> (int_of_char(x) - int_of_char('a') + 10)
+        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' -> (int_of_char(x) - int_of_char('A') + 10)
+        | _ -> raise (Failure "Improper use of function!")
+;;
 }
 let digit = ['0'-'9']
 let hex_digit = ['0'-'9' 'a'-'f']
@@ -22,8 +29,6 @@ let letter = ['a'-'z' 'A'-'Z']
 let white  = [' ' '\t' '\r']
 let esc_seq = '\\' ( [ 'n' 't' 'r' '0' '\\' '\'' '\"' ] | ('x' hex_digit hex_digit))
 let printable_char = [^ '\'' '\"' '\\' '\n' '\t' '\r' ] 
-
-
 
 rule lexer = parse
 	| white+ {lexer lexbuf}
@@ -84,7 +89,7 @@ rule lexer = parse
 (* parse to ascii and store as int*)
 
 and parse_char = parse
-	| '\\' 'x' digit digit '\'' as c {T_const_char_(int_of_char(c.[2])*16+int_of_char(c.[3]))}
+        | '\\' 'x' hex_digit hex_digit '\'' as c {T_const_char_(my_int_of_char(c.[2])*16+my_int_of_char(c.[3]))}
 	| '\\' 'n' '\'' {T_const_char_(10)}
 	| '\\' 't' '\'' {T_const_char_(9)}
 	| '\\' 'r' '\'' {T_const_char_(13)}

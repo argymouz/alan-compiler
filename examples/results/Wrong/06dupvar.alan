@@ -1,0 +1,10 @@
+main () : proc
+   a : int;
+   b : int;
+   a : int;
+{
+   a = 1;
+   writeInteger(a);
+   writeString("\nthis program is wrong!!!\n");
+}
+

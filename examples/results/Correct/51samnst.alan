@@ -1,0 +1,15 @@
+main () : proc
+
+   a1 () : proc
+      b () : proc { writeInteger(4); }
+   { b(); }
+
+   a2 () : proc
+      b () : proc { writeInteger(2); }
+   { b(); }
+
+{
+   a1();
+   a2();
+   writeString("\n");
+}
