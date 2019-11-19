@@ -4,8 +4,8 @@ Project developed for ECE-NTUA Compilers course (2017-2018).
 
 ## Contributors
 
-* Nikos Mouzakis
-* Argyris Mouzakis
+* [Nikos Mouzakis](https://github.com/nim1821)
+* [Argyris Mouzakis](https://github.com/argymouz)
 
 ## Implementation Details
 
