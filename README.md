@@ -1,6 +1,6 @@
 # Alan Compiler
 
-Project developed for ECE-NTUA Compilers course (2017-2018).
+Project developed for [ECE-NTUA Compilers course (2017-2018)](https://courses.softlab.ntua.gr/compilers/2018a/).
 
 ## Contributors
 
